@@ -712,6 +712,7 @@ static void home_draw(const bool full) {
   if (full) {
     gx_canvas(0, 0, GX_W, 56);
     gx_mask((GX_W - gx_novin_small.width) / 2, (56 - gx_novin_small.height) / 2, gx_novin_small, COLOR_WHITE);
+    gx_touch_add((GX_W - gx_novin_small.width) / 2, 0, gx_novin_small.width, 56, GXA(GA_GO, 41));   // Logo: community QR
     static const char * const labels[3] = { "prepare", "settings", "print" };
     for (uint8_t i = 0; i < 3; i++) {
       const uint16_t x = 24 + i * 152;
@@ -1385,6 +1386,73 @@ static void kv_row(const uint16_t y, const char *k, const char *v) {
   gx_text_right(214, y, v, GX_C_TEXT);
 }
 
+// Telegram community QR code (https://t.me/+tUvOqRGJAYQ5Y2Zk), 33x33 modules, MSB of each 40-bit row = column 0.
+// The center is left white, as on the printed code; error correction covers it.
+static const uint64_t gx_qr_rows[33] = {
+  0xFE6FA5BF80ULL, 0x825A6B2080ULL, 0xBA6ADB2E80ULL,
+  0xBA23EF2E80ULL, 0xBABF9F2E80ULL, 0x8236CAA080ULL,
+  0xFEAAAABF80ULL, 0x00DF730000ULL, 0x33AD10E800ULL,
+  0x54720A6480ULL, 0x3F33CFE280ULL, 0xC9DCA61D00ULL,
+  0xFA75161D00ULL, 0x8CCC149600ULL, 0x5AB0048400ULL,
+  0xAD3007FA80ULL, 0xB6E004E300ULL, 0xD8100B5A00ULL,
+  0xDA78063B00ULL, 0x9C801A4180ULL, 0x2A9D3C4600ULL,
+  0xB96DD60400ULL, 0x1BB6D03780ULL, 0x481C29D580ULL,
+  0xA68759F900ULL, 0x009C1B8D00ULL, 0xFEC982AC00ULL,
+  0x8275178F80ULL, 0xBA2571F900ULL, 0xBAB3CC9000ULL,
+  0xBAB6DC6000ULL, 0x826A31C080ULL, 0xFE60723C00ULL
+};
+#define GX_QR_N      33
+#define GX_QR_SCALE   6
+#define GX_QR_QUIET   2   // White border, in modules
+
+// White square with black modules, drawn straight into the canvas strip
+static void qr_render(uint16_t *buffer, uint16_t cw, uint16_t startLine, uint16_t endLine, int16_t x, int16_t y, const uint8_t *) {
+  constexpr int16_t full = (GX_QR_N + 2 * GX_QR_QUIET) * GX_QR_SCALE;
+  const uint16_t white = ENDIAN_COLOR(uint16_t(0xFFFF)), black = ENDIAN_COLOR(uint16_t(0x0000));
+  for (int16_t r = 0; r < full; r++) {
+    const int16_t line = y + r;
+    if (line < int16_t(startLine) || line >= int16_t(endLine)) continue;
+    uint16_t *row = buffer + (line - startLine) * cw;
+    const int16_t mr = r / GX_QR_SCALE - GX_QR_QUIET;
+    for (int16_t c = 0; c < full; c++) {
+      if (!WITHIN(x + c, 0, int16_t(cw) - 1)) continue;
+      const int16_t mc = c / GX_QR_SCALE - GX_QR_QUIET;
+      const bool dark = WITHIN(mr, 0, GX_QR_N - 1) && WITHIN(mc, 0, GX_QR_N - 1) && ((gx_qr_rows[mr] >> (39 - mc)) & 1);
+      row[x + c] = dark ? black : white;
+    }
+  }
+}
+
+GX_SCREEN(gx_screen_community) {
+  if (!gx_full()) return;
+  gx_header("COMMUNITY");
+  constexpr uint16_t Q = (GX_QR_N + 2 * GX_QR_QUIET) * GX_QR_SCALE;   // 222 px
+  gx_canvas(14, 60 + (252 - Q) / 2, Q, Q);
+  tft.add_custom(0, 0, (void *)qr_render, nullptr, 0);
+  // Telegram mark in the white center
+  constexpr int16_t m = Q / 2;
+  gx_panel(m - 19, m - 19, 38, 38, 0x2D3B, GXP_SOLID | GXP_BORDER, 0x2D3B, 18);   // #2AA5E0
+  const gx_seg_t plane[] = {
+    { int16_t(m - 11), int16_t(m - 1), int16_t(m + 10), int16_t(m - 9), 0xFFFF, GXL_BOLD },
+    { int16_t(m + 10), int16_t(m - 9), int16_t(m + 4),  int16_t(m + 10), 0xFFFF, GXL_BOLD },
+    { int16_t(m + 4),  int16_t(m + 10), int16_t(m - 2), int16_t(m + 3), 0xFFFF, GXL_BOLD },
+    { int16_t(m - 2),  int16_t(m + 3), int16_t(m - 11), int16_t(m - 1), 0xFFFF, GXL_BOLD },
+    { int16_t(m - 2),  int16_t(m + 3), int16_t(m + 10), int16_t(m - 9), 0xFFFF, 0 },
+    { int16_t(m - 2),  int16_t(m + 3), int16_t(m - 1),  int16_t(m + 9), 0xFFFF, GXL_BOLD }
+  };
+  gx_lines(plane, COUNT(plane));
+
+  // Text on the right
+  gx_canvas(250, 60, 220, 252);
+  gx_text(0, 20, "novin3dp", GX_C_ACC, GXF_L);
+  gx_text(0, 50, "Users & Support", GX_C_TEXT);
+  gx_text(0, 72, "Community", GX_C_TEXT);
+  gx_bar(0, 104, 210, 1, GX_C_LINE);
+  gx_text(0, 118, "Scan the code to join", GX_C_DIM);
+  gx_text(0, 140, "our Telegram group", GX_C_DIM);
+  gx_text(0, 182, "t.me/+tUvOqRGJAYQ5Y2Zk", GX_C_ACC);
+}
+
 GX_SCREEN(gx_screen_about) {
   if (!gx_full()) return;
   gx_header("ABOUT");
@@ -1951,6 +2019,7 @@ static void gx_open(const uint8_t id) {
       #endif
     #endif
     case 17: gx_go(gx_screen_about); break;
+    case 41: gx_go(gx_screen_community); break;
     case 30: gx_go(gx_screen_eeprom); break;
     case 31: gx_go(gx_screen_more); break;
     case 32: gx_go(gx_screen_gcode); break;
