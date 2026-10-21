@@ -1,0 +1,1135 @@
+<title>Novin3DP Galaxy UI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@500&family=Vazirmatn:wght@400;600;800&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Layout: one dark "mission console" page — live TS35 prototype first, then every screen as a wall of thumbnails, then the 1-bit icon foundry and firmware notes. Single committed dark look (the subject is a dark galaxy display). */
+:root{
+  color-scheme:dark;
+  --bg:#03060f; --surface:#081226; --surface-2:#0c1a33; --fg:#dde9f7; --muted:#8ea4bf; --accent:#35d6ff; --line:#172b47; --warm:#ff9f43;
+  --f-fa:'Vazirmatn',Tahoma,'Segoe UI',sans-serif;
+  --f-dev:'Noto Sans','Segoe UI',Arial,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  /* on-device tokens (RGB565-friendly) */
+  --d-bg:#040918; --d-acc:#35d6ff; --d-text:#e2f6ff; --d-dim:#7fa8c6; --d-line:#1c4f7a;
+  --d-panel:rgba(14,40,80,.5); --d-pop:#071430; --d-hot:#ff9f43; --d-bad:#ff5470; --d-ok:#47e08f;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:400 15px/1.8 var(--f-fa)}
+.page{max-width:1180px;margin:0 auto;padding-block:36px 96px;padding-inline:20px}
+h1,h2,h3{font-family:var(--f-fa);text-wrap:balance;margin:0}
+h1{font-weight:800;font-size:clamp(28px,4.2vw,42px);line-height:1.3}
+h1 .lat{color:var(--accent);font-family:var(--f-dev);font-weight:500;letter-spacing:.08em}
+.lead{color:var(--muted);max-width:72ch;margin:14px 0 0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 14px;font-size:14px;color:var(--muted)}
+.chip b{color:var(--fg);font-weight:600;direction:ltr;unicode-bidi:isolate;display:inline-block}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 20px;margin-top:20px;font-size:14px}
+nav.toc a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
+nav.toc a:hover{border-bottom-color:var(--accent)}
+section{margin-top:64px;scroll-margin-top:16px}
+section>header{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+h2{font-weight:800;font-size:26px}
+.sub{color:var(--muted);max-width:72ch;margin:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* prototype */
+.proto{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+@media (max-width:920px){.proto{grid-template-columns:minmax(0,1fr)}}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+select,button.b{font:inherit;font-size:14px;color:var(--fg);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:5px 12px;cursor:pointer}
+button.b:hover,select:hover{border-color:var(--accent)}
+button.b[aria-pressed="true"]{background:var(--accent);color:#03060f;border-color:var(--accent)}
+.bezel{background:#05080f;border:1px solid var(--line);border-radius:20px;padding:clamp(10px,2vw,22px);overflow-x:auto}
+.fitbox{width:100%;display:flex;justify-content:center}
+.bezel .model{display:flex;justify-content:space-between;font:500 11px/1 var(--f-dev);color:#3d5675;letter-spacing:.12em;margin-top:12px;direction:ltr}
+.dev{position:relative;flex:none;direction:ltr}
+.dev>.scr{position:absolute;top:0;left:0;transform-origin:0 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;min-width:0}
+.aside h3{font-size:19px}
+.en{font-family:var(--f-mono);font-size:12px;color:var(--muted);direction:ltr;unicode-bidi:isolate}
+.aside p{margin:10px 0 4px}
+.aside .k{font-size:13px;color:var(--muted);margin-top:14px}
+code{font-family:var(--f-mono);font-size:12.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:1px 7px;direction:ltr;unicode-bidi:isolate;display:inline-block;line-height:1.6}
+.codes{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+
+/* gallery */
+.group{margin-top:30px}
+.group h3{font-size:17px;margin-bottom:12px}
+.group h3 small{color:var(--muted);font-weight:400;font-size:14px}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(246px,1fr));gap:18px 14px}
+.th{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:6px;align-items:center}
+.th .frame{width:246px;height:166px;padding:2px;border:1px solid var(--line);border-radius:8px;background:#000}
+.th:hover .frame,.th:focus-visible .frame{border-color:var(--accent)}
+.th:focus-visible{outline:none}
+.th .cap{font-size:14px;display:flex;gap:8px;align-items:baseline}
+.th .scr{pointer-events:none}
+
+/* icon foundry */
+.itools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;direction:ltr}
+.seg button{all:unset;cursor:pointer;padding:5px 12px;font:500 13px/1.6 var(--f-dev);color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#03060f}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:10px}
+.icard{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.icard:hover,.icard:focus-visible{border-color:var(--accent)}
+.icard .box{width:100px;height:100px;display:grid;place-items:center;background:var(--d-bg);border-radius:6px}
+.icard canvas{image-rendering:pixelated;display:block}
+.icard .nm{font-family:var(--f-mono);font-size:12px;direction:ltr}
+.icard .sz{font-size:12px;color:var(--muted);line-height:1.4;text-align:center}
+.icard .un{color:var(--warm)}
+textarea#cout{width:100%;height:240px;margin-top:12px;background:#02050c;color:#bfe9ff;border:1px solid var(--line);border-radius:10px;font:12px/1.5 var(--f-mono);padding:12px;direction:ltr;resize:vertical}
+
+/* notes */
+.notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:860px){.notes{grid-template-columns:minmax(0,1fr)}}
+.span2{grid-column:1/-1}
+.notes h3{font-size:18px;margin-bottom:8px}
+.notes p{margin:0 0 10px}
+.notes ul{margin:0;padding-inline-start:20px}
+.notes li{margin-bottom:6px}
+.muted{color:var(--muted)}
+pre{direction:ltr;text-align:left;overflow-x:auto;background:#02050c;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font:12.5px/1.6 var(--f-mono);color:#bfe9ff;margin:10px 0 0}
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.swi{display:flex;gap:10px;align-items:center;font-size:13px;line-height:1.5;min-width:0}
+.swi i{width:34px;height:34px;border-radius:6px;border:1px solid var(--line);flex:none}
+.swi code{font-size:11.5px;padding:0 5px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:start;white-space:nowrap}
+th{color:var(--muted);font-weight:600}
+td.n{font:13px var(--f-mono);direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
+tr.tot td{color:var(--accent);border-bottom:0}
+.tree{direction:ltr;text-align:left;font:500 14px/1.9 var(--f-dev)}
+.tree ul{list-style:none;margin:0;padding-left:18px;border-left:1px solid var(--line)}
+.tree>ul{border-left:0;padding-left:0}
+.tree b{color:var(--accent);font-weight:500}
+.tree span{color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--accent);color:#03060f;padding:6px 16px;border-radius:999px;font-size:14px;font-weight:600}
+
+/* ---------- the device: 480×320, only the sizes Marlin can draw ---------- */
+.scr{position:relative;width:480px;height:320px;overflow:hidden;background:var(--d-bg) var(--galaxy) 0 0/480px 320px no-repeat;image-rendering:pixelated;font:500 16px/1.25 var(--f-dev);color:var(--d-text);text-align:left;user-select:none;-webkit-user-select:none}
+.scr *{box-sizing:border-box}
+.scr .ab{position:absolute}
+.ic{display:inline-block;flex:none;background-size:100% 100%;background-repeat:no-repeat;image-rendering:pixelated;vertical-align:middle}
+.tap{cursor:pointer}
+.proto .scr .tap:active{background:rgba(53,214,255,.18)}
+.mid{font-size:19px}
+.big{font-size:28px;line-height:1.1}
+.acc{color:var(--d-acc)} .hot{color:var(--d-hot)} .okc{color:var(--d-ok)} .badc{color:var(--d-bad)} .dim{color:var(--d-dim)}
+.lbl{color:var(--d-dim);text-transform:uppercase}
+.bk{left:10px;top:8px;width:44px;height:36px;border:1px solid var(--d-line);border-radius:6px;display:flex;align-items:center;justify-content:center;background:var(--d-panel)}
+.ttl{top:8px;font-size:28px;line-height:36px;color:var(--d-acc);letter-spacing:2px;white-space:nowrap}
+.hl{top:50px;right:10px;height:1px;background:var(--d-acc)}
+.hr{right:12px;top:8px;height:36px;display:flex;align-items:center;gap:12px;color:var(--d-dim);white-space:nowrap}
+.bk2{width:38px;height:30px;border:1px solid var(--d-line);border-radius:6px;display:flex;align-items:center;justify-content:center;background:var(--d-panel)}
+.ftr{left:0;right:0;top:276px;height:44px;border-top:1px solid var(--d-line);display:flex;align-items:center}
+.fi{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:30px;white-space:nowrap}
+.fi+.fi{border-left:1px solid var(--d-line)}
+.ftr.msg{justify-content:center;gap:10px;color:var(--d-dim)}
+.tg{display:grid;grid-auto-rows:1fr}
+.tile{border:1px solid var(--d-line);border-radius:6px;background:var(--d-panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-transform:uppercase;text-align:center;line-height:1.15;padding:4px;min-width:0}
+.tile>span{display:flex;flex-direction:column;gap:2px}
+.tile em{font-style:normal;color:var(--d-acc)}
+.tile.nc{text-transform:none}
+.tile.on{border-color:var(--d-acc)}
+.tile.bad{border-color:var(--d-bad);color:var(--d-bad)}
+.rg{display:grid;gap:6px}
+.row{display:flex;align-items:center;gap:8px;padding:0 4px 0 8px;border:1px solid var(--d-line);border-radius:6px;background:var(--d-panel);min-width:0}
+.rl{flex:1;min-width:0;white-space:nowrap;overflow:hidden}
+.rv{font-size:19px;white-space:nowrap}
+.rv small{font-size:16px;color:var(--d-dim);margin-left:2px}
+.ltr{width:28px;text-align:center;font-size:28px;line-height:1;color:var(--d-acc)}
+.eb{width:34px;height:30px;border:1px solid var(--d-line);border-radius:6px;display:flex;align-items:center;justify-content:center;flex:none}
+.tgl{width:44px;height:24px;border-radius:12px;border:1px solid var(--d-line);position:relative;flex:none;margin-right:4px}
+.tgl b{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--d-dim)}
+.tgl.on{border-color:var(--d-acc)} .tgl.on b{left:23px;background:var(--d-acc)}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid var(--d-line);border-radius:6px;background:var(--d-panel);text-transform:uppercase;white-space:nowrap}
+.btn.pri{border-color:var(--d-acc);color:var(--d-acc)}
+.btn.sel{background:var(--d-acc);border-color:var(--d-acc);color:var(--d-bg)}
+.btn.bad{border-color:var(--d-bad);color:var(--d-bad)}
+.panel{border:1px solid var(--d-line);border-radius:6px;background:var(--d-panel)}
+.pbar{border:1px solid var(--d-line);border-radius:6px;background:var(--d-panel);overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--d-acc)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.st{display:flex;gap:10px;align-items:center}
+.homeg{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.hm{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-size:19px;border-radius:8px}
+.fr{display:flex;align-items:center;gap:10px;height:38px;padding:0 8px;border-bottom:1px solid var(--d-line)}
+.fr .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden}
+.mvrow{display:flex;align-items:center;gap:8px;height:46px}
+.kv{display:flex;justify-content:space-between;gap:8px;height:30px;align-items:center;border-bottom:1px solid var(--d-line);white-space:nowrap}
+.kv:last-child{border-bottom:0}
+.mgrid{display:grid;gap:2px}
+.mc{display:flex;align-items:center;justify-content:center;color:var(--d-bg);border-radius:3px}
+.mc.sel{outline:2px solid var(--d-text);outline-offset:-2px}
+.knob{position:absolute;width:38px;height:38px;border-radius:50%;border:2px solid var(--d-line);display:flex;align-items:center;justify-content:center;color:var(--d-dim)}
+.knob.ok{border-color:var(--d-ok);color:var(--d-ok)}
+.knob.cur{border-color:var(--d-hot);color:var(--d-hot)}
+.stp{display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:14px;color:var(--d-dim);border:1px solid transparent}
+.stp i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.stp.done{color:var(--d-ok)} .stp.cur{color:var(--d-acc);border-color:var(--d-acc)}
+.dov{inset:0;background:rgba(0,0,0,.5)}
+.dlg{left:60px;top:50px;width:360px;height:220px;border:1px solid var(--d-acc);border-radius:8px;background:var(--d-pop);display:flex;flex-direction:column;align-items:center;padding:16px 18px;gap:6px;text-align:center}
+.dlg.bad{border-color:var(--d-bad)}
+.dbtns{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.dbtns .btn{height:40px}
+.th150{background:var(--th150) 0 0/100% 100% no-repeat;image-rendering:pixelated}
+.th48{background:var(--th48) 0 0/100% 100% no-repeat;image-rendering:pixelated;flex:none}
+.tbimg{background-size:100% 100%;background-repeat:no-repeat;image-rendering:pixelated;flex:none}
+.fc{border:1px solid var(--d-line);border-radius:6px;background:var(--d-panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px 6px;min-width:0;text-align:center;line-height:1.2}
+.fc .ell{max-width:100%}
+.sr{display:flex;align-items:center;gap:10px;height:30px;border-bottom:1px solid var(--d-line);white-space:nowrap}
+.sr:last-child{border-bottom:0}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pop{left:110px;top:96px;width:260px;height:128px;border:1px solid var(--d-acc);border-radius:8px;background:var(--d-pop);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+</style>
+
+<div class="page" dir="rtl">
+  <header>
+    <h1>رابط کاربری کهکشانی <span class="lat">NOVIN3DP</span></h1>
+    <p class="lead">طراحی کامل منوهای Marlin برای برد MKS Robin Nano V3.1 و نمایشگر لمسی MKS TS35 (۴۸۰×۳۲۰). همه آیکن‌ها تک‌رنگ‌اند و همین صفحه آن‌ها را به بیت‌مپ ۱ بیتی (فرمت <code>GREYSCALE1</code> مارلین) تبدیل می‌کند، پس چیزی که در پیش‌نمایش می‌بینید همان پیکسل‌هایی است که روی نمایشگر رسم می‌شود. پس‌زمینه کهکشانی با کد ساخته می‌شود و هیچ حجمی از فلش نمی‌گیرد.</p>
+    <div class="chips" id="heroChips"></div>
+    <nav class="toc" aria-label="بخش‌ها">
+      <a href="#live">پیش‌نمایش زنده</a><a href="#screens">همه صفحه‌ها</a><a href="#icons">کتابخانه آیکن</a><a href="#notes">نکات پیاده‌سازی</a>
+    </nav>
+  </header>
+
+  <section id="live">
+    <header>
+      <h2>پیش‌نمایش زنده</h2>
+      <p class="sub">روی دکمه‌ها بزنید؛ مسیرها مثل دستگاه واقعی کار می‌کنند. دکمه‌های مداد صفحه‌کلید عددی را باز می‌کنند که واقعاً کار می‌کند. Home، G29 و گرم‌شدن در پیش‌نمایش خودکار جلو می‌روند.</p>
+    </header>
+    <div class="proto">
+      <div>
+        <div class="toolbar">
+          <label for="pick" class="muted" style="font-size:14px">صفحه:</label>
+          <select id="pick"></select>
+          <button class="b" id="bHome" type="button">خانه</button>
+          <button class="b" id="bBack" type="button">بازگشت</button>
+          <button class="b" id="b11" type="button" aria-pressed="false">اندازه واقعی ۱:۱</button>
+        </div>
+        <div class="bezel">
+          <div class="fitbox" id="fitbox"><div class="dev" id="pdev" dir="ltr"><div class="scr" id="pscr"></div></div></div>
+          <div class="model"><span>MKS TS35 · 480×320</span><span>ROBIN NANO V3.1</span></div>
+        </div>
+      </div>
+      <aside class="card aside" aria-live="polite">
+        <h3 id="aT"></h3>
+        <div class="en" id="aId"></div>
+        <p id="aD"></p>
+        <div class="k">پشت این صفحه در مارلین:</div>
+        <div class="codes" id="aM"></div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="screens">
+    <header>
+      <h2>همه صفحه‌ها</h2>
+      <p class="sub" id="screensSub"></p>
+    </header>
+    <div id="gal"></div>
+  </section>
+
+  <section id="icons">
+    <header>
+      <h2>کتابخانه آیکن ۱ بیتی</h2>
+      <p class="sub">هر آیکن روی شبکه ۶۴×۶۴ طراحی شده، در اندازه انتخابی رسم می‌شود و با آستانه به ۱ بیت تبدیل می‌شود. ضخامت خط تا ۴۰ پیکسل ۲ پیکسل، تا ۶۴ پیکسل ۳ پیکسل و در ۸۰ پیکسل ۴ پیکسل است تا خطوط در ۱ بیت نشکنند. رنگ آیکن موقع رسم تعیین می‌شود، پس یک بیت‌مپ هم فیروزه‌ای، هم نارنجی و هم قرمز رسم می‌شود. روی هر آیکن بزنید تا کد C آن کپی شود.</p>
+    </header>
+    <div class="itools">
+      <span class="muted" style="font-size:14px">اندازه:</span>
+      <div class="seg" id="isz" role="group" aria-label="اندازه آیکن"></div>
+      <button class="b" id="bUsed" type="button">کد C آیکن‌های به‌کاررفته</button>
+      <button class="b" id="bAll" type="button">کد C همه در این اندازه</button>
+      <button class="b" id="bCopy" type="button">کپی کد</button>
+    </div>
+    <div class="igrid" id="igrid"></div>
+    <label for="cout" class="muted" style="display:block;margin-top:14px;font-size:14px">خروجی برای پوشه <code>Marlin/src/lcd/tft/images/</code></label>
+    <textarea id="cout" readonly spellcheck="false"></textarea>
+  </section>
+
+  <section id="notes">
+    <header>
+      <h2>نکات پیاده‌سازی در مارلین</h2>
+      <p class="sub">این طراحی فقط از چیزهایی استفاده می‌کند که روی STM32F407 با حافظه محدود شدنی است: آیکن ۱ بیتی، فونت‌های موجود NotoSans، پس‌زمینه محاسباتی و ترکیب رنگ ۵۰٪ بدون ضرب.</p>
+    </header>
+    <div class="notes">
+      <div class="card span2">
+        <h3>پالت رنگ (RGB565)</h3>
+        <div class="sw" id="pal"></div>
+      </div>
+
+      <div class="card span2">
+        <h3>تامبنیل QOI از جی‌کد OrcaSlicer</h3>
+        <p>در فایل <code>QOI-OrcaCube_v2_PLA_43m32s.gcode</code> شما (تنظیم <code>48x48/QOI, 150x150/QOI</code>) دو تصویر در ۱۴۵ خط اول هست. هر کدام بین <code>; thumbnail_QOI begin WxH LEN</code> و <code>; thumbnail_QOI end</code> قرار دارد و هر خطش با <code>; </code> شروع می‌شود و ادامه‌اش base64 است. تصویر مکعب در این صفحه مستقیماً از همین داده‌ها و با همان مراحل کد C پایین باز شده است، پس بازکننده روی فایل واقعی شما آزمایش شده است.</p>
+        <div class="tw"><table>
+          <tr><th>تصویر</th><th>خط در فایل</th><th>base64</th><th>داده QOI</th><th>محل نمایش</th></tr>
+          <tr><td class="n">48×48</td><td class="n">13–39</td><td class="n">1944</td><td class="n">≈1.4 KB</td><td>کارت‌های فهرست فایل، پنجره بازیابی برق</td></tr>
+          <tr><td class="n">150×150</td><td class="n">45–142</td><td class="n">7464</td><td class="n">≈5.5 KB</td><td>جزئیات فایل، صفحه چاپ، پایان چاپ</td></tr>
+        </table></div>
+        <p style="margin-top:12px">QOI بدون پنجره و به‌صورت جریانی باز می‌شود. کل وضعیتش ۲۵۶ بایت است و هر پیکسل بلافاصله به RGB565 تبدیل و ردیف به ردیف روی نمایشگر رسم می‌شود. اندازه ۱۵۰ دقیقاً اندازه کادر صفحه چاپ است، پس تغییر اندازه لازم نیست.</p>
+<pre>// Streaming QOI -> RGB565. next_byte() returns the next base64-decoded byte
+// from the "; " comment lines (4 chars -> 3 bytes). Skip the 14-byte "qoif" header first.
+static uint8_t idx[64][4], px[4] = { 0, 0, 0, 255 }, run = 0;
+
+bool qoi_next_pixel(uint16_t &amp;color) {               // false = transparent pixel
+  if (run) run--;
+  else {
+    const uint8_t b1 = next_byte();
+    if (b1 == 0xFE)      { px[0] = next_byte(); px[1] = next_byte(); px[2] = next_byte(); }
+    else if (b1 == 0xFF) { px[0] = next_byte(); px[1] = next_byte(); px[2] = next_byte(); px[3] = next_byte(); }
+    else switch (b1 >> 6) {
+      case 0: memcpy(px, idx[b1], 4); break;                                    // INDEX
+      case 1: px[0] += ((b1 >> 4) &amp; 3) - 2; px[1] += ((b1 >> 2) &amp; 3) - 2; px[2] += (b1 &amp; 3) - 2; break; // DIFF
+      case 2: { const uint8_t b2 = next_byte(); const int8_t vg = (b1 &amp; 0x3F) - 32;  // LUMA
+                px[0] += vg - 8 + (b2 >> 4); px[1] += vg; px[2] += vg - 8 + (b2 &amp; 0x0F); } break;
+      case 3: run = b1 &amp; 0x3F; break;                                           // RUN
+    }
+    memcpy(idx[(px[0] * 3 + px[1] * 5 + px[2] * 7 + px[3] * 11) &amp; 63], px, 4);
+  }
+  color = RGB(px[0], px[1], px[2]);
+  return px[3] >= 128;                                // transparent: keep panel + galaxy
+}</pre>
+        <ul style="margin-top:12px">
+          <li><b>فهرست فایل‌ها:</b> برای هر کارت فقط خطوط توضیحی ابتدای فایل خوانده می‌شود و با رسیدن به اولین خط G-code جست‌وجو تمام می‌شود، پس فایل‌های بی‌تامبنیل هم سریع رد می‌شوند. کارت‌ها اول با نام و قاب خالی رسم می‌شوند و در هر دور حلقه UI یک تامبنیل اضافه می‌شود، پس صفحه هیچ‌وقت قفل نمی‌شود. هر تامبنیل ۴۸ حدود ۱۰ تا ۴۰ میلی‌ثانیه طول می‌کشد (USB کمی کندتر از SD).</li>
+          <li><b>بدون کش در RAM:</b> هشت تامبنیل ۴۸×۴۸ در RGB565 می‌شود ۳۶ کیلوبایت، پس به جای نگه‌داشتن، هر بار از فایل خوانده می‌شوند.</li>
+          <li><b>جزئیات فایل:</b> با لمس کارت، تامبنیل ۱۵۰ همان فایل خوانده می‌شود.</li>
+          <li><b>کِی رسم شود:</b> فقط یک بار هنگام ورود به صفحه چاپ، مستقیم روی نمایشگر. به‌روزرسانی‌های دوره‌ای فقط درصد، زمان‌ها و دماها را دوباره رسم می‌کنند و به کادر تصویر دست نمی‌زنند. برای خواندن آن از یک <code>SdBaseFile</code> جداگانه استفاده می‌شود تا موقعیت خواندن فایل چاپ تغییر نکند.</li>
+          <li><b>اگر تامبنیل نبود:</b> آیکن <code>file</code> در اندازه ۸۰ رسم می‌شود.</li>
+          <li><b>نمونه‌ها:</b> در فهرست نمونه این صفحه فقط تصویر OrcaCube واقعی است. تصویر بقیه فایل‌ها (گلدان، برج دما و...) برای نمایش طرح کشیده شده‌اند و از همان مسیر RGB565 رد شده‌اند.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>حجم حافظه آیکن‌ها</h3>
+        <p class="muted">بر اساس آیکن‌ها و اندازه‌هایی که واقعاً در صفحه‌ها استفاده شده‌اند.</p>
+        <div class="tw"><table id="budget"></table></div>
+      </div>
+
+      <div class="card">
+        <h3>فونت‌ها</h3>
+        <p>فقط سه اندازه از فونت NotoSans Medium که همین حالا در پوشه <code>fontdata</code> شما هست:</p>
+        <ul>
+          <li><b>۱۶ پیکسل، کامل</b>: متن اصلی، برچسب‌ها و پیام‌ها. جایگزین ۱۴ فعلی در <code>ui_480x320.h</code>.</li>
+          <li><b>۱۹ پیکسل، فقط ASCII</b>: مقدارها و نام‌ها.</li>
+          <li><b>۲۸ پیکسل، ASCII و °</b>: عنوان صفحه و عددهای بزرگ.</li>
+        </ul>
+        <p class="muted" style="margin-top:10px">دو فونت اضافه حدود ۱۰ تا ۱۴ کیلوبایت فلش می‌گیرند. فاصله ۲ پیکسلی حروف عنوان با یک خط کد در حلقه رسم حروف اضافه می‌شود.</p>
+      </div>
+
+      <div class="card span2">
+        <h3>پس‌زمینه کهکشانی بدون مصرف فلش</h3>
+        <p>یک تصویر کامل ۴۸۰×۳۲۰ در RGB565 حدود ۳۰۰ کیلوبایت است و در این میکرو جا نمی‌شود. به جای آن هر پیکسل پس‌زمینه از دو چیز ساخته می‌شود: یک گرادیان عمودی آبی تیره و دو سحابی نرم. سحابی‌ها جداپذیرند، یعنی هر کدام از ضرب یک جدول X در یک جدول Y به دست می‌آیند و محاسبه‌شان ارزان است. پس‌زمینه هیچ ستاره یا نقطه‌ای ندارد و هر بار رسم دقیقاً همان تصویر را می‌دهد. پیش‌نمایش‌های این صفحه با همین الگوریتم ساخته شده‌اند. در <code>Canvas::New()</code> به جای پرکردن با <code>COLOR_BACKGROUND</code> این تابع را صدا بزنید. آیکن‌ها و متن‌ها فقط بیت‌های روشن را می‌نویسند، پس پس‌زمینه پشت آن‌ها دیده می‌شود.</p>
+<pre>// Marlin/src/lcd/tft/canvas.cpp
+// RAM: bg_row 640 B + nebula tables 2 x (480 + 320) B  (or keep them const in flash)
+static uint16_t bg_row[TFT_HEIGHT];                       // vertical gradient #040918 -> #091634
+static uint8_t  neb_x[2][TFT_WIDTH], neb_y[2][TFT_HEIGHT]; // separable gaussians
+static const uint16_t neb_col[2] = { RGB(34, 78, 170), RGB(52, 40, 140) };
+
+static inline uint16_t blend565(uint16_t a, uint16_t b, uint8_t n) { // n = weight of b, 0..255
+  const int ar = a >> 11, ag = (a >> 5) &amp; 63, ab = a &amp; 31,
+            br = b >> 11, bg = (b >> 5) &amp; 63, bb = b &amp; 31;
+  return ((ar + (((br - ar) * n) >> 8)) &lt;&lt; 11) | ((ag + (((bg - ag) * n) >> 8)) &lt;&lt; 5) | (ab + (((bb - ab) * n) >> 8));
+}
+
+uint16_t galaxy_pixel(uint16_t x, uint16_t y) {          // gradient + two soft nebulae, no stars
+  uint16_t c = bg_row[y];
+  for (uint8_t k = 0; k &lt; 2; k++) {
+    const uint8_t n = (neb_x[k][x] * neb_y[k][y]) >> 8;
+    if (n) c = blend565(c, neb_col[k], n);
+  }
+  return c;
+}</pre>
+      </div>
+
+      <div class="card">
+        <h3>پنل نیمه‌شفاف و تیره‌کردن پشت پنجره</h3>
+        <p>پنل‌ها رنگ <code>#0E2850</code> با ترکیب ۵۰٪ روی کهکشان هستند و پشت پنجره‌های تأیید ۵۰٪ تیره می‌شود. هر دو بدون ضرب و با یک شیفت انجام می‌شوند:</p>
+<pre>static inline uint16_t half_blend(uint16_t a, uint16_t b) {
+  return ((a &amp; 0xF7DE) >> 1) + ((b &amp; 0xF7DE) >> 1);
+}
+static inline uint16_t dim50(uint16_t c) {
+  return (c >> 1) &amp; 0x7BEF;
+}</pre>
+        <p class="muted" style="margin-top:10px">گوشه‌های گرد ۶ پیکسلی با رد کردن چند پیکسل گوشه در <code>Canvas::addRect()</code> ساخته می‌شوند. هیچ سایه یا درخششی در طرح نیست چون روی دستگاه گران است.</p>
+      </div>
+
+      <div class="card">
+        <h3>آیکن‌ها در فرمت مارلین</h3>
+        <p>خروجی بخش آیکن دقیقاً همان چیزی است که <code>Canvas::addImage()</code> می‌خواند: هر ردیف از بیت بالا (MSB) شروع می‌شود و به بایت کامل پر می‌شود. رنگ آیکن را آرایه <code>colors</code> هنگام رسم می‌دهد.</p>
+<pre>// images/fan_48x48x1.cpp
+const uint8_t fan_48x48x1[288] = { ... };
+const tImage Fan_48x48x1 = { (void *)fan_48x48x1, 48, 48, GREYSCALE1 };
+
+// draw tinted: one bitmap, any color
+uint16_t tint[] = { COLOR_HOT };
+tft.add_image(x, y, imgFan48, tint);</pre>
+        <p class="muted" style="margin-top:10px">عرض تصویر در <code>addImage</code> از نوع <code>uint8_t</code> است، پس هر آیکن حداکثر ۲۵۵ پیکسل عرض دارد.</p>
+      </div>
+
+      <div class="card">
+        <h3>تغییرها نسبت به طرح‌های اولیه شما</h3>
+        <ul>
+          <li><b>LAYER</b> به ارتفاع Z تبدیل شد، چون مارلین تعداد لایه‌ها را نمی‌داند.</li>
+          <li>زمان باقی‌مانده به <code>SHOW_REMAINING_TIME</code> و دستور <code>M73 R</code> از اسلایسر نیاز دارد؛ الان فقط <code>SET_PROGRESS_PERCENT</code> روشن است.</li>
+          <li>مکعب بزرگ صفحه Move جای خود را به موقعیت واقعی محورها داد: حدود ۳ کیلوبایت کمتر و اطلاعات مفیدتر.</li>
+          <li><b>LCD Contrast</b> برای نمایشگرهای تک‌رنگ است؛ به جایش روشنایی صفحه آمد.</li>
+          <li><b>Retract</b> حذف شد چون <code>FWRETRACT</code> خاموش است.</li>
+          <li>آیکن move صفحه اصلی به Prepare می‌رود و Move Axis داخل آن است، تا Home و پیش‌گرم هم یک لمس فاصله داشته باشند.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>گزینه‌هایی که باید روشن شوند</h3>
+        <ul>
+          <li><code>PID_AUTOTUNE_MENU</code> برای صفحه PID</li>
+          <li><code>Z_MIN_PROBE_REPEATABILITY_TEST</code> برای دکمه M48</li>
+          <li><code>SHOW_REMAINING_TIME</code> و <code>SET_REMAINING_TIME</code> برای زمان باقی‌مانده</li>
+          <li><code>DISPLAY_SLEEP_MINUTES</code> و <code>SOUND_MENU_ITEM</code> برای صفحه Display</li>
+          <li><code>BED_TRAMMING_USE_PROBE</code> (اختیاری) برای تنظیم گوشه‌ها با پراب؛ الان تست کاغذ است</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>فایل‌هایی که تغییر می‌کنند</h3>
+        <ul>
+          <li><code>lcd/tft/canvas.cpp</code>: پس‌زمینه، گوشه گرد، ترکیب ۵۰٪</li>
+          <li><code>lcd/tft/tft_image.h</code> و <code>images/*.cpp</code>: آیکن‌های جدید</li>
+          <li><code>lcd/tft/ui_480x320.cpp/.h</code>: صفحه اصلی، چاپ، Move و منوهای شبکه‌ای</li>
+          <li><code>lcd/tft/ui_common.cpp</code>: صفحه ویرایش عدد و پنجره تأیید</li>
+          <li><code>lcd/menu/menu_*.cpp</code>: چیدمان آیتم‌ها</li>
+          <li><code>lcd/tft/tft_string.cpp</code>: فونت دوم و سوم</li>
+          <li><code>lcd/tft/thumbnail.cpp</code> (جدید): پیدا کردن و بازکردن تامبنیل QOI/PNG</li>
+        </ul>
+        <p class="muted" style="margin-top:10px">منوهای استاندارد مارلین فهرستی‌اند. صفحه‌های شبکه‌ای (Prepare، Settings، Leveling) مثل صفحه وضعیت فعلی شما با <code>touch.add_control()</code> ساخته می‌شوند.</p>
+      </div>
+
+      <div class="card span2">
+        <h3>نقشه منوها</h3>
+        <div class="tree" id="tree"></div>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(()=>{
+/* =========================================================
+   1. ICON GEOMETRY — every icon on a 64×64 grid, monochrome
+   ========================================================= */
+const D=Math.PI/180, P=n=>Math.round(n*100)/100;
+const circ=(cx,cy,r)=>`M${P(cx-r)} ${P(cy)}a${r} ${r} 0 1 0 ${P(2*r)} 0a${r} ${r} 0 1 0 ${P(-2*r)} 0Z`;
+const rr=(x,y,w,h,r)=>`M${x+r} ${y}H${x+w-r}A${r} ${r} 0 0 1 ${x+w} ${y+r}V${y+h-r}A${r} ${r} 0 0 1 ${x+w-r} ${y+h}H${x+r}A${r} ${r} 0 0 1 ${x} ${y+h-r}V${y+r}A${r} ${r} 0 0 1 ${x+r} ${y}Z`;
+const pt=(r,a,cx=32,cy=32)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+const poly=(pts,close=true)=>'M'+pts.map(p=>P(p[0])+' '+P(p[1])).join('L')+(close?'Z':'');
+const seg=(p,q)=>poly([p,q],false);
+function arrow(x1,y1,x2,y2,h=7){const a=Math.atan2(y2-y1,x2-x1);return `M${x1} ${y1}L${x2} ${y2}`+poly([[x2-h*Math.cos(a-.55),y2-h*Math.sin(a-.55)],[x2,y2],[x2-h*Math.cos(a+.55),y2-h*Math.sin(a+.55)]],false);}
+function gear(cx,cy,ro,ri,n){const pts=[],w=Math.PI/n;for(let i=0;i<n;i++){const a=i*2*Math.PI/n-Math.PI/2;pts.push(pt(ri,a-w*.62,cx,cy),pt(ro,a-w*.38,cx,cy),pt(ro,a+w*.38,cx,cy),pt(ri,a+w*.62,cx,cy));}return poly(pts);}
+const wave=(x,y,n,hh)=>`M${x} ${y}`+`c3.5 ${P(hh/3)} -3.5 ${P(hh*2/3)} 0 ${hh}`.repeat(n);
+const hot=y=>`M14 ${y}h36`+rr(20,y,24,12,2)+`M25 ${y+12}l5 9h4l5-9`;
+const thermo=x=>`M${x-6} 39V12a6 6 0 0 1 12 0v27a11 11 0 1 1-12 0z`;
+const chip='M20 54v6M28 54v6M36 54v6M44 54v6'+rr(14,32,36,22,3);
+
+const I={
+  back:{s:'M52 32H12M28 16L12 32l16 16'},
+  chev_r:{s:'M24 12l20 20-20 20'},
+  chev_u:{s:'M12 42l20-20 20 20'},
+  chev_d:{s:'M12 22l20 20 20-20'},
+  plus:{s:'M32 10v44M10 32h44'},
+  minus:{s:'M10 32h44'},
+  check:{s:'M10 34l14 14 30-30'},
+  close:{s:'M14 14l36 36M50 14L14 50'},
+  check_c:{s:circ(32,32,27)+'M19 33l9 9 17-18'},
+  edit:{s:'M10 54l4-14L42 12l10 10-28 28zM36 18l10 10M14 40l10 10'},
+  backspace:{s:'M22 14h34v36H22L6 32zM30 24l16 16M46 24L30 40'},
+  home:{s:'M8 30L32 10l24 20M14 25v31h36V25M27 56V40h10v16'},
+  autohome:{s:'M8 28L32 8l24 20M14 23v33h36V23'+circ(32,40,9)+'M32 27v4M32 49v4M19 40h4M41 40h4',f:circ(32,40,3)},
+  axes:{s:poly([[32,22],[42,28],[42,40],[32,46],[22,40],[22,28]])+'M22 28L32 34L42 28M32 34V46'+arrow(32,22,32,5)+arrow(42,40,59,49)+arrow(22,40,5,49)},
+  gear:{s:gear(32,32,28,21,8)+circ(32,32,9),f:circ(32,32,3)},
+  usb:{s:rr(18,4,28,40,7)+rr(23,44,18,16,2)+'M26 14h12',f:rr(27,49,3,5,1)+rr(34,49,3,5,1)},
+  sd:{s:'M18 4h22l10 10v46H18zM25 4v10M31 4v10M37 4v10'},
+  file:{s:'M14 4h26l12 12v44H14zM40 4v12h12M22 30h22M22 38h22M22 46h14'},
+  folder:{s:'M6 12h18l6 6h28v36H6zM6 24h52'},
+  folder_up:{s:'M6 12h18l6 6h28v36H6zM32 48V30M25 37l7-7 7 7'},
+  eject:{s:'M10 38L32 12l22 26zM10 52h44'},
+  refresh:{s:'M12 28A21 21 0 0 1 49 18M49 7v11H38M52 36A21 21 0 0 1 15 46M15 57V46h11'},
+  thermo:{s:thermo(32)+'M44 14h8M44 22h6M44 30h8',f:circ(32,48,5.5)+rr(30,22,4,24,2)},
+  preheat:{s:thermo(20)+wave(38,10,3,10)+wave(47,10,3,10)+wave(56,10,3,10),f:circ(20,48,5.5)+rr(18,22,4,24,2)},
+  nozzle:{s:'M10 10h44'+rr(18,10,28,14,2)+'M24 24l5 10h6l5-10M30 34v3h4v-3'+wave(22,44,2,8)+wave(32,44,2,8)+wave(42,44,2,8)},
+  bed:{s:rr(6,36,52,10,3)+'M12 46v8M52 46v8'+wave(20,6,3,8)+wave(32,6,3,8)+wave(44,6,3,8)},
+  fan:{s:circ(32,32,28),f:circ(32,32,5)+Array.from({length:5},(_,k)=>{const a=k*72*D-Math.PI/2,q=(r,da)=>pt(r,a+da).map(P).join(' ');return `M${q(7,-.3)}C${q(16,-.7)} ${q(25,-.35)} ${q(25,.1)}C${q(20,.3)} ${q(12,.25)} ${q(7,.3)}Z`;}).join('')},
+  speed:{s:'M9 46A25 25 0 1 1 55 46M32 36L42 26'+[180,225,270,315,360].map(d=>seg(pt(17,d*D,32,36),pt(21,d*D,32,36))).join(''),f:circ(32,36,4.5)},
+  flow:{s:'M32 5C32 5 13 27 13 40a19 19 0 0 0 38 0C51 27 32 5 32 5zM22 41a10 10 0 0 0 10 10'},
+  babystep:{s:'M8 8h16L8 28h16M44 4v28M38 10l6-6 6 6M38 26l6 6 6-6'+rr(6,40,52,8,2)+rr(12,48,40,8,2)},
+  tune:{s:'M8 16h48M8 32h48M8 48h48',f:circ(22,16,6)+circ(42,32,6)+circ(28,48,6)},
+  pause:{s:circ(32,32,27),f:rr(22,20,7,24,2)+rr(35,20,7,24,2)},
+  play:{s:circ(32,32,27),f:'M26 19l20 13-20 13z'},
+  stop:{s:poly(Array.from({length:8},(_,k)=>pt(28,(22.5+45*k)*D))),f:rr(22,22,20,20,2)},
+  snow:{s:Array.from({length:6},(_,k)=>{const a=(k*60-90)*D,p=pt(17,a);return seg([32,32],pt(27,a))+poly([[p[0]+8*Math.cos(a+.8),p[1]+8*Math.sin(a+.8)],p,[p[0]+8*Math.cos(a-.8),p[1]+8*Math.sin(a-.8)]],false);}).join('')},
+  spool:{s:circ(32,32,27)+circ(32,32,9),f:circ(32,32,3)+[-90,30,150].map(d=>circ(...pt(18,d*D),3.5)).join('')},
+  load:{s:'M32 4v22M24 18l8 8 8-8'+hot(34)},
+  unload:{s:'M32 26V4M24 12l8-8 8 8'+hot(34)},
+  purge:{s:hot(6)+'M10 60h44',f:'M32 31c0 0-5 6-5 9a5 5 0 0 0 10 0c0-3-5-9-5-9zM22 60a10 6 0 0 1 20 0z'},
+  change:{s:circ(32,32,9)+'M12 28A21 21 0 0 1 49 18M49 7v11H38M52 36A21 21 0 0 1 15 46M15 57V46h11',f:circ(32,32,3)},
+  runout:{s:rr(16,18,32,28,4)+'M32 4v56',f:circ(41,26,3)},
+  leveling:{s:(()=>{let s=poly([[4,58],[60,58],[50,38],[14,38]]);for(let t=1;t<4;t++)s+=`M${4+14*t} 58L${14+9*t} 38`;for(const u of [1/3,2/3])s+=`M${P(14-10*u)} ${P(38+20*u)}H${P(50+10*u)}`;return s+rr(26,4,12,14,2)+'M32 18v10';})(),f:circ(32,31,2.5)},
+  mesh:{s:rr(6,6,52,52,3)+'M23.33 6v52M40.67 6v52M6 23.33h52M6 40.67h52',f:circ(40.67,23.33,4.5)},
+  mesh_edit:{s:rr(4,4,38,38,3)+'M16.67 4v38M29.33 4v38M4 16.67h38M4 29.33h38M34 60l3-9 17-17 6 6-17 17z'},
+  layers:{s:'M32 8l26 12-26 12L6 20zM6 32l26 12 26-12M6 44l26 12 26-12'},
+  zoffset:{s:'M6 6h32'+rr(12,6,20,12,2)+'M16 18l4 8h4l4-8M4 50h56v8H4zM48 30v16M43 35l5-5 5 5M43 41l5 5 5-5M40 26h16'},
+  probe:{s:rr(20,4,24,30,3)+'M10 11h10M44 11h10M32 34v14',f:circ(32,51,4)+circ(32,14,2.5)},
+  deploy:{s:rr(10,4,22,24,3)+'M21 28v18M50 12v34M43 39l7 7 7-7',f:circ(21,49,3.5)},
+  stow:{s:rr(10,4,22,24,3)+'M21 28v6M50 46V12M43 19l7-7 7 7',f:circ(21,37,3.5)},
+  tramming:{s:rr(8,8,48,48,4)+circ(18,18,5)+circ(46,18,5)+circ(18,46,5)+circ(46,46,5)+'M28 32h8M32 28v8'},
+  steppers_off:{s:circ(32,32,27)+circ(32,32,10)+'M13 13l38 38'},
+  motion:{s:arrow(16,48,16,6)+arrow(16,48,58,48)+arrow(16,48,46,18),f:circ(16,48,4)},
+  store:{s:chip+'M32 4v22M24 18l8 8 8-8'},
+  load_set:{s:chip+'M32 26V4M24 12l8-8 8 8'},
+  restore:{s:'M19.3 19.3A18 18 0 1 1 14 32M19 8v11H8M32 22v10l7 5'},
+  display:{s:circ(32,32,10)+Array.from({length:8},(_,k)=>seg(pt(16,k*45*D),pt(25,k*45*D))).join('')},
+  target:{s:circ(32,32,16)+'M32 4v16M32 44v16M4 32h16M44 32h16',f:circ(32,32,4)},
+  info:{s:circ(32,32,27)+'M32 28v18',f:circ(32,19,3.5)},
+  globe:{s:circ(32,32,27)+'M32 5C20 17 20 47 32 59C44 47 44 17 32 5M5 32h54M9 19h46M9 45h46'},
+  clock:{s:circ(32,32,27)+'M32 16v16l11 7'},
+  hourglass:{s:'M16 6h32M16 58h32M21 6v6c0 8 11 14 11 20s-11 12-11 20v6M43 6v6c0 8-11 14-11 20s11 12 11 20v6',f:'M24 58c0-6 8-9 8-13 0 4 8 7 8 13z'},
+  warning:{s:'M32 6l28 50H4zM32 24v16',f:circ(32,47,3)},
+  flame:{s:'M32 4C35 14 50 22 50 38A18 18 0 0 1 14 38C14 29 19 23 23 19C24 26 27 29 31 29C28 20 29 12 32 4Z',f:'M32 52a6 6 0 0 1-6-6c0-4 3-7 6-10 3 3 6 6 6 10a6 6 0 0 1-6 6z'},
+  bolt:{s:'M36 4L14 36h16l-4 24 24-34H34z'},
+  pid:{s:'M4 32C8 8 14 8 18 32S26 52 30 32 36 18 40 32 45 40 48 32H60M4 58h56'},
+  stats:{s:'M8 56h48'+rr(13,34,8,22,1)+rr(28,20,8,36,1)+rr(43,10,8,46,1)},
+  extruder:{s:'M32 2v60'+gear(17,32,14,10.5,9)+gear(47,32,14,10.5,9)},
+  bell:{s:'M14 46h36M18 46V30a14 14 0 0 1 28 0v16M27 52a5 5 0 0 0 10 0M32 10v6'},
+  moon:{s:'M42 8A25 25 0 1 0 56 42A20 20 0 0 1 42 8Z'},
+  ruler:{s:rr(4,20,56,24,3)+'M12 20v10M20 20v6M28 20v10M36 20v6M44 20v10M52 20v6'},
+  accel:{s:arrow(28,32,58,32,10)+'M6 22h16M10 32h12M6 42h16'},
+  jerk:{s:'M4 48l14-28 14 28 14-28 14 28'},
+  diameter:{s:circ(32,32,20)+'M18 46L46 18M16 36v12h12M48 28V16H36'},
+  la:{s:'M6 6v52h52M10 50c14 0 16-30 30-32h16'}
+};
+
+/* =========================================================
+   2. RASTER → 1 bit (exactly what Canvas::addImage reads)
+   ========================================================= */
+const COL={a:'#35d6ff',t:'#e2f6ff',d:'#7fa8c6',h:'#ff9f43',b:'#ff5470',o:'#47e08f',k:'#040918'};
+const swPx=s=>s<=40?2:s<=64?3:4;
+const RC={};
+function raster(name,size){
+  const key=name+'@'+size; if(RC[key]) return RC[key];
+  const def=I[name], c=document.createElement('canvas'); c.width=c.height=size;
+  const x=c.getContext('2d'), sc=size/64;
+  x.setTransform(sc,0,0,sc,0,0);
+  x.lineWidth=swPx(size)/sc; x.lineCap='round'; x.lineJoin='round'; x.strokeStyle=x.fillStyle='#fff';
+  if(def.s) x.stroke(new Path2D(def.s));
+  if(def.f) x.fill(new Path2D(def.f));
+  const img=x.getImageData(0,0,size,size), d=img.data, rowB=Math.ceil(size/8), bytes=new Uint8Array(rowB*size);
+  for(let y=0;y<size;y++)for(let X=0;X<size;X++){
+    const i=(y*size+X)*4, on=d[i+3]>=110;
+    d[i]=d[i+1]=d[i+2]=255; d[i+3]=on?255:0;
+    if(on) bytes[y*rowB+(X>>3)]|=0x80>>(X&7);
+  }
+  x.setTransform(1,0,0,1,0,0); x.putImageData(img,0,0);
+  return RC[key]={canvas:c,bytes};
+}
+const sheet=(()=>{const el=document.createElement('style');document.head.appendChild(el);return el.sheet;})();
+const seen=new Set(), used=new Map();
+function ic(n,s,c='a'){
+  const k=`i-${n}-${s}-${c}`;
+  if(!seen.has(k)){
+    seen.add(k);
+    const r=raster(n,s), cv=document.createElement('canvas'); cv.width=cv.height=s;
+    const x=cv.getContext('2d'); x.drawImage(r.canvas,0,0); x.globalCompositeOperation='source-in'; x.fillStyle=COL[c]; x.fillRect(0,0,s,s);
+    sheet.insertRule(`.${k}{background-image:url("${cv.toDataURL()}")}`,sheet.cssRules.length);
+  }
+  used.set(n+'@'+s,[n,s]);
+  return `<i class="ic ${k}" style="width:${s}px;height:${s}px"></i>`;
+}
+
+/* =========================================================
+   3. GALAXY BACKGROUND — same algorithm as the C code
+   ========================================================= */
+(function galaxy(){
+  const W=480,H=320,c=document.createElement('canvas'); c.width=W; c.height=H;
+  const x=c.getContext('2d'), im=x.createImageData(W,H), d=im.data;
+  const top=[4,9,24], bot=[9,22,52], neb=[[34,78,170],[52,40,140]];
+  const g=(v,m,s,a)=>Math.round(a*Math.exp(-((v-m)**2)/(2*s*s)));
+  const nx=[[],[]], ny=[[],[]];
+  for(let i=0;i<W;i++){nx[0][i]=g(i,345,105,255); nx[1][i]=g(i,80,90,255);}
+  for(let j=0;j<H;j++){ny[0][j]=g(j,85,75,150); ny[1][j]=g(j,265,60,110);}
+  for(let y=0;y<H;y++){
+    const t=y/(H-1), row=top.map((v,i)=>Math.round(v+(bot[i]-v)*t));
+    for(let X=0;X<W;X++){
+      let [r,gg,b]=row;
+      for(let k=0;k<2;k++){const n=(nx[k][X]*ny[k][y])>>8; if(n){r+=((neb[k][0]-r)*n)>>8; gg+=((neb[k][1]-gg)*n)>>8; b+=((neb[k][2]-b)*n)>>8;}}
+      const i=(y*W+X)*4, r5=r>>3, g6=gg>>2, b5=b>>3;
+      d[i]=(r5<<3)|(r5>>2); d[i+1]=(g6<<2)|(g6>>4); d[i+2]=(b5<<3)|(b5>>2); d[i+3]=255;
+    }
+  }
+  x.putImageData(im,0,0);
+  document.documentElement.style.setProperty('--galaxy',`url("${c.toDataURL()}")`);
+})();
+
+/* =========================================================
+   3b. G-CODE THUMBNAILS — the real QOI images from QOI-OrcaCube_v2_PLA_43m32s.gcode
+       ("; thumbnail_QOI begin 48x48 1944" and "150x150 7464"), decoded with exactly
+       the same steps as the C decoder in the notes, then RGB565, alpha < 128 = transparent.
+       The other files in the demo list get sample drawings (said so in the notes).
+   ========================================================= */
+const FN='OrcaCube_v2_PLA_43m32s.gcode';
+const QOI150='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', QOI48='cW9pZgAAADAAAAAwBAAA/f3m/zs7HUD/3Nxv7//r63b/wi7/WFgsYADl/4SEQo8Hxv+Tk0qf/w8PBxAA4f8sLBYw/87OZ98HyP+/v2DP/0lJJVAA3/91dTt/B8su/2dnNHAZANsZPQfO/7CwWL//HR0PIADZFAfEmov+wMBhqoL+5uZ0B8cuNADXMwfE/tnZbRwHEf7U1GoHyR0ZANMKFgfE/rq6Xf7S0moHwRGciQfJLv9JSSVQANE6B8Q4/sDAYQfEEQfLExkAzTE9B8T+xsZkwAfFl4wHzD0xAMz/paVTvwfOHAfN/5SUSr8Ay/9BQSFQOAfPHAfD/s7OZxEHxf67u17/RkYjcADJ/w0NBxD/t7dc3zgHz5KPB8EC/rS0Wv7a2m0IHAfEH/+VlUvv/woKBRD/AAAAAMj/aGg0f//CwmH/l40cB84cB8D+xsZkmosHxwL+m5tOnIr/WFgsjwDI/4KCQc//oKBQ/8Clhf7KymUHzZuLnIn+wMBhOAfHIf6JiUXB/3h4PN8AyDwlwv6zs1kRB8z+w8NiB8j+rq5XIMI5AMj/goJBzyXDG/7U1GoH1Dj+lZVLIMM5AMg8JcX+wcFhEQfRECDFOQDIPCXAk47+p6dU/rm5XCXBBiYHzjgvIMb/eHg83wDIPCXALyUB/qurViXBGwgHzBwgwqmDLyDCOQDIPCXAp4WugSWdiiXD/rOzWf7i4nEHyAL+qKhUIMP+sbFZIMP/eHg83wDI/4KCQc8lwST+rq5X/pqaTaOHm4olwhv+z89oB8Yr/o+PSJqLw6SGGiDDOQDIPP+goFD/nIolG/6/v2Cai/6fn08q/rKyWSXD/ry8XhEHwwsgxQEEIMM5AMg8JamE/sLCYf6srFYlwaeFJZSO/q6uVyXCNP7Y2G3C/qGhUSDCmoukhiDA/rq6XSDE/3h4PN8AyDwlJ6iE/qurVZKPQiWlhSWjh6mDpoUlwiz+19dswP7Dw2L+iYlFxAnA/pubTqmDIMQ5AMg8JQGwgLGA/p6eT5uLrIKkhiU5VRBpEyXAp4T+1NRqIf6Tk0ogxv6xsVkgxf94eDzf/wAAAADIPCUL/szMZhAll4wlFiXA/re3XJiMlY0DCyXA/ru7Xhogxy8gxTkAyDwlwBv+uLhc/qamU/6VlUqjh6WGDiXB/rOzWbCBFiXACyDIQUEgxP94eDzfAMj/UFAofyX+v79gEyXAsID+m5tNIpGP/rm5XP6iolElroEN/qioVCXBIMqaiyDD/0REIn8AyP8KCgUQ/4aGQ8//urpd/8D+paVSJcAbBhU8r4D+oKBQwKmENCXBIMaqgyIgwJyKwCDB/4CAQe8Ayv8yMhlQH6WFBRAlwauD/srKZf6srFb+mJhMPCXDIMYaBCDA/sDAYSIgwf8rKxZQAMv/bm43r/+8vF7/JKeEDQYLJaSGooedif7CwmEbJcIgxaSG/rGxWSDA/rS0Wv6bm04gwf9nZzS/AMwj/1paLY//qalU7//JyWX/HQatgbKAGyU0/sXFYg0lwiDFEy8gxP9NTSeP/wAAAADP/ygoFED/kJBI3x2pgyemhaSGGyUL/rS0Wv6WlkslwSDF/sPDYSDD/4CAQe//IiIRQADRIzAlwP6yslkao4cTJcCsgqOHLyUgxAaXjSDC/1ZWK5//AAAAANX/MjIZUP+WlkvvJRD+ycllwBslBiXBIMMLBiDC/zMzGmD/AAAAANf/FBQKIDYlqYP+xMRifxslwiDDpoUgwf9vbzjP/xERCSAA2v9QUCh/Av+urlf/EgWRjxOcisAgxv9ERCJ/AN3/KCgUQP+CgkHPBgX+urpdHSXAIMT/b284z/8aGg0wAN8jMBv+w8Nik47+oKBQwCDDHgDjDP+MjEbfJcEgwf+AgEHvLgDlIzb/gYFB3/5vbzeVjquD/2dnNL8nAP395gAAAAAAAAAB';
+function qoiDecode(b64){
+  const bin=atob(b64), d=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) d[i]=bin.charCodeAt(i);
+  const w=((d[4]<<24)|(d[5]<<16)|(d[6]<<8)|d[7])>>>0, h=((d[8]<<24)|(d[9]<<16)|(d[10]<<8)|d[11])>>>0;
+  const out=new ImageData(w,h), o=out.data, idx=new Uint8Array(256), px=new Uint8Array([0,0,0,255]);
+  let p=14, run=0;
+  for(let i=0;i<w*h;i++){
+    if(run) run--;
+    else{
+      const b1=d[p++];
+      if(b1===0xFE){px[0]=d[p++];px[1]=d[p++];px[2]=d[p++];}
+      else if(b1===0xFF){px[0]=d[p++];px[1]=d[p++];px[2]=d[p++];px[3]=d[p++];}
+      else switch(b1>>6){
+        case 0: px.set(idx.subarray(b1*4,b1*4+4)); break;
+        case 1: px[0]+=((b1>>4)&3)-2; px[1]+=((b1>>2)&3)-2; px[2]+=(b1&3)-2; break;
+        case 2: {const b2=d[p++], vg=(b1&63)-32; px[0]+=vg-8+(b2>>4); px[1]+=vg; px[2]+=vg-8+(b2&15);} break;
+        case 3: run=b1&63; break;
+      }
+      idx.set(px,((px[0]*3+px[1]*5+px[2]*7+px[3]*11)&63)*4);
+    }
+    o.set(px,i*4);
+  }
+  return out;
+}
+function q565(img){
+  const a=img.data;
+  for(let i=0;i<a.length;i+=4){
+    if(a[i+3]<128){a[i+3]=0;continue;}
+    const r=a[i]>>3,g=a[i+1]>>2,b=a[i+2]>>3;
+    a[i]=(r<<3)|(r>>2); a[i+1]=(g<<2)|(g>>4); a[i+2]=(b<<3)|(b>>2); a[i+3]=255;
+  }
+  return img;
+}
+function imgURL(img){const c=document.createElement('canvas');c.width=img.width;c.height=img.height;c.getContext('2d').putImageData(img,0,0);return c.toDataURL();}
+
+/* sample drawings for the demo files that are not the OrcaCube */
+const shade=(h,f)=>{const n=parseInt(h.slice(1),16);return `rgb(${[n>>16,(n>>8)&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(v*f)))).join(',')})`;};
+function isoBox(x,c0,X,Y,w,h,d,f=1){
+  const dx=d*.7,dy=-d*.45,q=pts=>{x.beginPath();pts.forEach(([a,b],i)=>i?x.lineTo(a,b):x.moveTo(a,b));x.closePath();x.fill();};
+  x.fillStyle=shade(c0,.6*f); q([[X+w,Y],[X+w,Y-h],[X+w+dx,Y-h+dy],[X+w+dx,Y+dy]]);
+  x.fillStyle=shade(c0,.9*f); x.fillRect(X,Y-h,w,h);
+  x.fillStyle=shade(c0,1.15*f); q([[X,Y-h],[X+w,Y-h],[X+w+dx,Y-h+dy],[X+dx,Y-h+dy]]);
+}
+const DRAW={
+  vase:x=>{const c='#8a6cff',g=x.createLinearGradient(80,0,220,0);g.addColorStop(0,shade(c,.5));g.addColorStop(.4,shade(c,1.2));g.addColorStop(1,shade(c,.55));
+    x.fillStyle=g;x.beginPath();x.moveTo(95,70);x.bezierCurveTo(55,140,80,235,112,262);x.lineTo(188,262);x.bezierCurveTo(220,235,245,140,205,70);x.closePath();x.fill();
+    x.fillStyle=shade(c,.35);x.beginPath();x.ellipse(150,70,55,16,0,0,7);x.fill();x.strokeStyle=shade(c,1.3);x.lineWidth=6;x.stroke();},
+  tower:x=>{const c='#ff8a3d';isoBox(x,c,55,265,150,18,80);for(let k=0;k<6;k++)isoBox(x,c,85,247-k*32,100,30,48,k%2?.9:1.05);},
+  stand:x=>{const c='#e8463c';isoBox(x,c,50,258,170,16,80);
+    const q=(pts,f)=>{x.fillStyle=shade(c,f);x.beginPath();pts.forEach(([a,b],i)=>i?x.lineTo(a,b):x.moveTo(a,b));x.closePath();x.fill();};
+    q([[135,242],[170,220],[240,76],[205,98]],.6);q([[95,242],[135,242],[205,98],[175,88]],.95);q([[175,88],[205,98],[240,76],[210,66]],1.2);},
+  plate:x=>{isoBox(x,'#e6e6e6',30,205,200,14,120,.95);},
+  clip:x=>{const c='#8a96a8';x.lineCap='round';x.lineWidth=46;x.strokeStyle=shade(c,.75);x.beginPath();x.arc(150,155,72,.25*Math.PI,1.75*Math.PI);x.stroke();
+    x.lineWidth=12;x.strokeStyle=shade(c,1.25);x.beginPath();x.arc(150,155,84,.6*Math.PI,1.5*Math.PI);x.stroke();},
+  box:x=>{isoBox(x,'#3fc1a5',80,240,120,120,90);}
+};
+const TH={cube:{48:imgURL(q565(qoiDecode(QOI48))),150:imgURL(q565(qoiDecode(QOI150)))}};
+for(const k in DRAW){
+  const c=document.createElement('canvas');c.width=c.height=300;DRAW[k](c.getContext('2d'));TH[k]={};
+  for(const s of [48,150]){const t=document.createElement('canvas');t.width=t.height=s;const y=t.getContext('2d');y.imageSmoothingQuality='high';y.drawImage(c,0,0,s,s);TH[k][s]=imgURL(q565(y.getImageData(0,0,s,s)));}
+}
+document.documentElement.style.setProperty('--th150',`url("${TH.cube[150]}")`);
+document.documentElement.style.setProperty('--th48',`url("${TH.cube[48]}")`);
+{const el=document.createElement('style');el.textContent=Object.entries(TH).map(([k,v])=>`.tb-${k}-48{background-image:url("${v[48]}")}.tb-${k}-150{background-image:url("${v[150]}")}`).join('');document.head.appendChild(el);}
+
+/* =========================================================
+   4. UI BUILDING BLOCKS (device pixels)
+   ========================================================= */
+const at=o=>(o.go?` data-go="${o.go}"`:'')+(o.edit?` data-edit="${o.edit}"`:'')+(o.act?` data-act="${o.act}"`:'')+(o.back?' data-back':'');
+function hdr(t,right='',back=true){const x=back?66:20;return (back?`<div class="ab bk tap" data-back>${ic('back',24)}</div>`:'')+`<div class="ab ttl" style="left:${x}px">${t}</div><div class="ab hl" style="left:${x}px"></div>`+(right?`<div class="ab hr">${right}</div>`:'');}
+const fItem=(i,t,go,c='a')=>`<div class="fi${go?' tap':''}"${go?` data-go="${go}"`:''}>${ic(i,28,c)}<span>${t}</span></div>`;
+const F={
+  idle:()=>`<div class="ab ftr">${fItem('nozzle','25° / 0°','temp')}${fItem('bed','24° / 0°','temp')}${fItem('fan','0%','temp')}</div>`,
+  print:()=>`<div class="ab ftr">${fItem('nozzle','208° / 210°','temp','h')}${fItem('bed','60° / 60°','temp')}${fItem('fan','80%','temp')}</div>`,
+  time:()=>`<div class="ab ftr">${fItem('clock','00:32:13')}${fItem('layers','Z 22.20')}${fItem('hourglass','00:11:19')}</div>`,
+  msg:(t,i='info',c='d')=>`<div class="ab ftr msg">${ic(i,24,c)}<span>${t}</span></div>`
+};
+function tiles(list,{cols=4,top=60,bottom=52,is=48,left=10,right=10,cls=''}={}){
+  return `<div class="ab tg" style="left:${left}px;right:${right}px;top:${top}px;bottom:${bottom}px;grid-template-columns:repeat(${cols},1fr);gap:8px">`+
+    list.map(t=>`<div class="tile tap ${cls} ${t.cls||''}"${at(t)}>${ic(t.i,t.is||is,t.c||'a')}<span>${t.l}${t.v?`<em>${t.v}</em>`:''}</span></div>`).join('')+'</div>';
+}
+function rows(list,{cols=2,top=60,h=42,left=10,right=10}={}){
+  return `<div class="ab rg" style="left:${left}px;right:${right}px;top:${top}px;grid-template-columns:repeat(${cols},1fr);grid-auto-rows:${h}px">`+list.map(r=>{
+    let tail='';
+    if(r.edit) tail=`<span class="eb">${ic('edit',20)}</span>`;
+    else if(r.go) tail=ic('chev_r',20,'d');
+    else if(r.tg!==undefined) tail=`<span class="tgl${r.tg?' on':''}"><b></b></span>`;
+    const lead=r.ltr?`<span class="ltr">${r.ltr}</span>`:ic(r.i,r.is||28,r.c||'a');
+    return `<div class="row tap"${at(r)}>${lead}<span class="rl">${r.l}</span>${r.v!==undefined?`<span class="rv">${r.v}${r.u?`<small>${r.u}</small>`:''}</span>`:''}${tail}</div>`;
+  }).join('')+'</div>';
+}
+function btn(o){const c=o.c||(/bad/.test(o.cls||'')?'b':/sel/.test(o.cls||'')?'k':'a');return `<div class="ab btn tap ${o.cls||''}"${at(o)} style="${o.st}">${o.i?ic(o.i,o.is||24,c):''}${o.l?`<span>${o.l}</span>`:''}</div>`;}
+function dlg(o){return `<div class="ab dov"></div><div class="ab dlg ${o.cls||''}">${o.th?`<div class="${o.th}" style="width:48px;height:48px"></div>`:ic(o.i,48,o.c||'a')}<div class="mid ${o.tc||'acc'} ell" style="max-width:100%">${o.t}</div><div class="dim">${o.m}</div><div class="dbtns">${o.b.map(b=>`<div class="btn tap ${b.cls||''}"${at(b)}>${b.i?ic(b.i,20,b.c||'a'):''}<span>${b.l}</span></div>`).join('')}</div></div>`;}
+const stat=(i,v,l)=>`<div class="st">${ic(i,28,'d')}<div><div class="mid">${v}</div><div class="lbl">${l}</div></div></div>`;
+const fmtM=v=>(v>0?'+':v<0?'-':'')+Math.abs(v).toFixed(2).replace(/^0/,'');
+function meshCol(v,mn,mx){const t=(v-mn)/((mx-mn)||1),A=[42,92,255],B=[53,214,255],C2=[255,159,67];const [p,q,u]=t<.5?[A,B,t*2]:[B,C2,(t-.5)*2];return `rgb(${p.map((c,i)=>Math.round(c+(q[i]-c)*u)).join(',')})`;}
+
+/* =========================================================
+   5. SCREENS
+   ========================================================= */
+const S={}, def=(id,o)=>S[id]=o;
+
+def('boot',{fa:'صفحه راه‌اندازی',d:'لوگوی NOVIN3DP (بیت‌مپ ۱ بیتی NOVINBIG که در فریم‌ور شما هست) با نوار پیشرفت. در پیش‌نمایش بعد از ۲ ثانیه به صفحه اصلی می‌رود.',m:['MarlinUI::show_bootscreen()','BOOTSCREEN_TIMEOUT'],r:s=>`
+<div class="ab" style="left:0;right:0;top:104px;text-align:center"><div class="big acc" style="letter-spacing:8px">NOVIN3DP</div><div class="dim" style="margin-top:10px">X5 v3 · Marlin 2.1.x</div></div>
+<div class="ab pbar" style="left:150px;width:180px;top:196px;height:6px"><i style="width:62%"></i></div>
+<div class="ab dim" style="left:0;right:0;top:214px;text-align:center">Initializing...</div>`});
+
+def('home',{fa:'صفحه اصلی',d:'حالت آماده. سه ورودی بزرگ مثل طرح خودتان و نوار وضعیت پایین. لمس هر دما صفحه دما را باز می‌کند.',m:['MarlinUI::draw_status_screen()','touch.add_control()'],r:s=>`
+<div class="ab" style="left:0;right:0;top:16px;text-align:center"><div class="big acc" style="letter-spacing:6px">NOVIN3DP</div><div class="dim" style="margin-top:6px">X5 v3 ready.</div></div>
+<div class="ab homeg" style="left:24px;right:24px;top:96px;height:164px">${[['axes','prepare','prepare'],['gear','settings','settings'],['usb','print','media']].map(([i,l,g])=>`<div class="hm tap" data-go="${g}">${ic(i,80)}<span>${l}</span></div>`).join('')}</div>${F.idle()}`});
+
+const FS={
+  usb:{'/':[['dir','calibration','5 files'],['f',FN,'1.6 MB','cube'],['f','galaxy_vase.gcode','4.7 MB','vase'],['f','temperature_tower.gcode','5.1 MB','tower'],['f','phone_stand.gcode','2.2 MB','stand'],['f','first_layer.gcode','0.3 MB','plate'],['f','cable_clip.gcode','0.4 MB','clip'],['f','old_bracket.gcode','3.3 MB','']],
+       '/calibration':[['up','..',''],['f','xyz_cube_20mm.gcode','0.6 MB','box'],['f','temp_tower_PLA.gcode','5.1 MB','tower'],['f','flow_test.gcode','1.2 MB','plate'],['f','retraction_test.gcode','0.9 MB','tower'],['f','bridge_test.gcode','0.7 MB','']]},
+  sd:{'/':[['dir','parts','12 files'],['f','x5_bracket.gcode','3.3 MB','box'],['f','spool_holder.gcode','2.9 MB','clip'],['f',FN,'1.6 MB','cube'],['f','first_layer.gcode','0.3 MB','plate']]}
+};
+const findFile=n=>{for(const v of Object.values(FS))for(const l of Object.values(v)){const f=l.find(e=>e[1]===n);if(f)return f;}return null;};
+const pth=(s,z)=>{const f=findFile(s.sel),k=f?f[3]:'cube';return k?`<div class="tbimg tb-${k}-${z}" style="width:${z}px;height:${z}px"></div>`:ic('file',z>100?80:48,'d');};
+
+def('media',{fa:'انتخاب حافظه',d:'منوی جدا برای انتخاب USB یا کارت SD (MULTI_VOLUME روشن است). وضعیت و تعداد فایل‌های هر حافظه روی کارت آن دیده می‌شود. آخرین حافظه استفاده‌شده قاب روشن دارد.',m:['MULTI_VOLUME','card.changeMedia()','M21 / M22'],r:s=>{
+  const vol=(k,i,l,t)=>`<div class="tile tap ${s.media===k?'on':''}" data-act="vol:${k}" style="gap:12px">${ic(i,64)}<span><span class="mid" style="text-transform:none">${l}</span><span class="dim" style="text-transform:none">${t}</span></span></div>`;
+  return `${hdr('STORAGE')}
+<div class="ab tg" style="left:10px;right:10px;top:60px;height:156px;grid-template-columns:1fr 1fr;gap:8px">${vol('usb','usb','USB drive','Ready · 7 files, 1 folder')}${vol('sd','sd','SD card','Ready · 4 files, 1 folder')}</div>
+${btn({i:'refresh',l:'Refresh',st:'left:10px;top:224px;width:226px;height:44px'})}${btn({i:'eject',l:'Eject',st:'left:244px;top:224px;width:226px;height:44px'})}
+${F.idle()}`;}});
+
+def('files',{fa:'فایل‌ها با تصویر کوچک',d:'هشت فایل در هر صفحه به شکل کارت با تامبنیل ۴۸×۴۸ خود جی‌کد. پوشه‌ها نارنجی‌اند و فایل بدون تامبنیل آیکن ساده می‌گیرد. پسوند .gcode برای جا داشتن نام حذف می‌شود.',m:['card.cd()','card.getfilename()','; thumbnail_QOI begin 48x48'],r:s=>{
+  const list=FS[s.media][s.path]||FS[s.media]['/'], n=list.filter(e=>e[0]!=='up').length, pages=Math.max(1,Math.ceil(list.length/8));
+  const card=([t,nm,z,k])=>t==='dir'?`<div class="fc tap" data-act="cd:${nm}">${ic('folder',48,'h')}<span class="ell">${nm}</span><span class="dim">${z}</span></div>`
+    :t==='up'?`<div class="fc tap" data-act="cd:..">${ic('folder_up',48,'d')}<span>..</span><span class="dim">Back</span></div>`
+    :`<div class="fc tap" data-act="pick:${nm}">${k?`<div class="tbimg tb-${k}-48" style="width:48px;height:48px"></div>`:ic('file',48,'d')}<span class="ell">${nm.replace(/\.gcode$/,'')}</span><span class="dim">${z}</span></div>`;
+  return `${hdr(s.media==='usb'?'USB':'SD CARD',`<span>${s.path}</span><div class="bk2 tap">${ic('chev_u',20)}</div><div class="bk2 tap">${ic('chev_d',20)}</div>`)}
+<div class="ab tg" style="left:10px;right:10px;top:58px;bottom:52px;grid-template-columns:repeat(4,1fr);grid-template-rows:1fr 1fr;gap:8px">${list.slice(0,8).map(card).join('')}</div>
+${F.msg(`${n} items · page 1 of ${pages}`,'file','d')}`;}});
+
+def('print_confirm',{fa:'جزئیات و شروع چاپ',d:'با لمس هر کارت، تصویر بزرگ ۱۵۰×۱۵۰، حجم و محل فایل نمایش داده می‌شود و چاپ از همین‌جا شروع می‌شود.',m:['card.openAndPrintFile()','M23 / M24','; thumbnail_QOI begin 150x150'],r:s=>{
+  const f=findFile(s.sel)||['f',FN,'1.6 MB','cube'];
+  return S.files.r(s)+`<div class="ab dov"></div><div class="ab dlg" style="left:20px;top:28px;width:440px;height:240px;flex-direction:row;align-items:center;gap:16px;padding:16px;text-align:left">
+<div class="panel" style="width:160px;height:160px;display:flex;align-items:center;justify-content:center;flex:none">${pth(s,150)}</div>
+<div style="flex:1;min-width:0;align-self:stretch;display:flex;flex-direction:column;gap:4px">
+  <div class="mid acc" style="overflow-wrap:anywhere;line-height:1.25">${f[1]}</div>
+  <div class="sr" style="margin-top:6px">${ic('file',24,'d')}<span class="dim" style="flex:1">Size</span><span>${f[2]}</span></div>
+  <div class="sr">${ic(s.media==='usb'?'usb':'sd',24,'d')}<span class="dim" style="flex:1">Storage</span><span>${s.media==='usb'?'USB':'SD'}${s.path==='/'?'':s.path}</span></div>
+  <div class="dbtns"><div class="btn tap" data-back>${ic('close',20)}<span>Cancel</span></div><div class="btn tap pri" data-go="heating">${ic('play',20)}<span>Print</span></div></div>
+</div></div>`;}});
+
+def('heating',{fa:'گرم‌شدن پیش از چاپ',d:'تا رسیدن نازل و بستر به دمای هدف نمایش داده می‌شود. در پیش‌نمایش خودکار به صفحه چاپ می‌رود.',m:['M190 S60','M109 S210'],r:s=>{
+  const hr=(i,l,cur,tgt,pct,c,top,cls,col)=>`<div class="ab panel" style="left:20px;right:20px;top:${top}px;height:76px;display:flex;align-items:center;gap:14px;padding:0 16px">${ic(i,40,c)}<div style="flex:1"><div class="lbl">${l}</div><div class="pbar" style="height:8px;margin-top:10px"><i style="width:${pct}%;background:${col}"></i></div></div><div class="big ${cls}">${cur}<span class="dim" style="font-size:16px"> / ${tgt}°C</span></div></div>`;
+  return `${hdr('HEATING','',false)}
+<div class="ab" style="right:20px;top:14px;display:flex;gap:10px;align-items:center">${ic('file',24,'d')}<span class="dim">${FN}</span></div>
+${hr('nozzle','Nozzle','185','210',88,'h',70,'hot','var(--d-hot)')}${hr('bed','Bed','60','60',100,'o',156,'okc','var(--d-ok)')}
+<div class="ab dim" style="left:20px;right:20px;top:244px;text-align:center">Printing starts automatically.</div>
+${F.msg('Heating nozzle... 185 / 210°C','nozzle','h')}`;}});
+
+def('printing',{fa:'در حال چاپ',d:'صفحه وضعیت حین چاپ با تامبنیل ۱۵۰×۱۵۰ خود جی‌کد. پیکسل‌های شفاف PNG رسم نمی‌شوند، پس پنل و کهکشان پشت مدل دیده می‌شود. به جای شماره لایه، ارتفاع Z نمایش داده می‌شود.',m:['; thumbnail begin 300x300','ui.get_progress_percent()','print_job_timer.duration()','ui.get_remaining_time()  ← M73 R'],r:s=>`
+${hdr('PRINTING','<span class="big acc">74%</span>',false)}
+<div class="ab panel" style="left:10px;top:58px;width:160px;height:160px;display:flex;align-items:center;justify-content:center">${pth(s,150)}</div>
+<div class="ab" style="left:182px;right:10px;top:60px;height:26px;display:flex;gap:8px;align-items:center">${ic('file',24)}<span class="ell">${s.sel}</span></div>
+<div class="ab pbar" style="left:182px;right:10px;top:94px;height:14px"><i style="width:74%;${s.paused?'background:var(--d-hot)':''}"></i></div>
+<div class="ab" style="left:182px;right:10px;top:116px">
+  <div class="sr">${ic('clock',24,'d')}<span class="dim" style="flex:1">Elapsed</span><span class="mid">00:32:13</span></div>
+  <div class="sr">${ic('hourglass',24,'d')}<span class="dim" style="flex:1">Remaining</span><span class="mid">00:11:19</span></div>
+  <div class="sr">${ic('layers',24,'d')}<span class="dim" style="flex:1">Z height</span><span class="mid">${s.paused?'<span class="hot">PAUSED</span>':'22.20 / 30.00'}</span></div>
+</div>
+${btn({i:'tune',l:'Tune',go:'tune',st:'left:10px;top:226px;width:148px;height:42px'})}
+${btn({i:s.paused?'play':'pause',l:s.paused?'Resume':'Pause',act:'pause',cls:s.paused?'pri':'',st:'left:166px;top:226px;width:148px;height:42px'})}
+${btn({i:'stop',l:'Stop',cls:'bad',go:'confirm_stop',st:'left:322px;top:226px;width:148px;height:42px'})}
+${F.print()}`});
+
+def('tune',{fa:'تنظیم حین چاپ (Tune)',d:'سرعت، جریان، دمای هدف، فن و Babystep در حین چاپ. هر مداد صفحه‌کلید عددی را باز می‌کند.',m:['M220','M221','M104 / M140','M106','M290'],r:s=>`
+${hdr('TUNE','<span class="mid acc">74%</span>')}
+${rows([
+  {i:'speed',l:'Speed',v:'100',u:'%',edit:'Print speed|100|%|10|999'},
+  {i:'flow',l:'Flow',v:'100',u:'%',edit:'Flow|100|%|10|999'},
+  {i:'nozzle',l:'Nozzle',v:'210',u:'°C',c:'h',edit:'Nozzle temp|210|°C|0|310'},
+  {i:'bed',l:'Bed',v:'60',u:'°C',edit:'Bed temp|60|°C|0|150'},
+  {i:'fan',l:'Fan',v:'80',u:'%',edit:'Fan speed|80|%|0|100'},
+  {i:'babystep',l:'Babystep',v:'+0.05',u:'mm',go:'zoffset'}],{top:58,h:40})}
+${btn({i:s.paused?'play':'pause',l:s.paused?'Resume':'Pause',act:'pause',st:'left:10px;top:198px;width:226px;height:40px'})}
+${btn({i:'stop',l:'Stop print',cls:'bad',go:'confirm_stop',st:'left:244px;top:198px;width:226px;height:40px'})}
+<div class="ab" style="left:10px;right:10px;top:246px;height:22px;display:flex;align-items:center;gap:12px"><span class="dim ell" style="max-width:220px">${FN}</span><div class="pbar" style="flex:1;height:10px"><i style="width:74%"></i></div><span class="acc">74%</span></div>
+${F.time()}`});
+
+def('confirm_stop',{fa:'تأیید توقف چاپ',d:'دکمه خطرناک قرمز است و در سمت راست، دور از جای دکمه Tune.',m:['ui.abort_print()','M524'],r:s=>S.printing.r(s)+dlg({i:'stop',c:'b',cls:'bad',t:'STOP PRINT?',tc:'badc',m:'The current print will be aborted.<br>Heaters turn off and the nozzle parks.',b:[{l:'Cancel',back:1},{l:'Stop',cls:'bad',i:'stop',c:'b',act:'stopnow'}]})});
+
+def('runout',{fa:'تمام‌شدن فیلامنت',d:'سنسور فیلامنت (FILAMENT_RUNOUT_SENSOR) چاپ را متوقف کرده است.',m:['FILAMENT_RUNOUT_SENSOR','M600'],r:s=>S.printing.r({...s,paused:true})+dlg({i:'runout',c:'h',t:'FILAMENT RUNOUT',tc:'hot',m:'Print paused at 74%.<br>Load new filament to continue.',b:[{l:'Stop',cls:'bad',i:'stop',c:'b',go:'confirm_stop'},{l:'Change',cls:'pri',i:'change',go:'fil_wait'}]})});
+
+def('finished',{fa:'پایان چاپ',d:'تامبنیل مدل چاپ‌شده، زمان واقعی چاپ و آمار کل از PRINTCOUNTER.',m:['print_job_timer','PRINTCOUNTER'],r:s=>`
+<div class="ab panel" style="left:20px;top:30px;width:160px;height:160px;display:flex;align-items:center;justify-content:center">${pth(s,150)}</div>
+<div class="ab" style="left:196px;right:20px;top:32px;display:flex;gap:10px;align-items:center">${ic('check_c',40,'o')}<span class="mid okc">PRINT COMPLETE</span></div>
+<div class="ab ell" style="left:196px;right:20px;top:84px">${s.sel}</div>
+<div class="ab" style="left:196px;right:20px;top:110px">
+  <div class="sr">${ic('clock',24,'d')}<span class="dim" style="flex:1">Print time</span><span class="mid">00:43:32</span></div>
+  <div class="sr">${ic('layers',24,'d')}<span class="dim" style="flex:1">Height</span><span class="mid">30.00 mm</span></div>
+  <div class="sr">${ic('stats',24,'d')}<span class="dim" style="flex:1">Total prints</span><span class="mid">143</span></div>
+</div>
+${btn({i:'snow',l:'Cooldown',st:'left:20px;top:220px;width:212px;height:46px'})}${btn({i:'home',l:'Home',cls:'pri',act:'home',st:'left:248px;top:220px;width:212px;height:46px'})}
+${F.msg('Bed cooling down... 52°C','bed','d')}`});
+
+def('recovery',{fa:'بازیابی قطع برق',d:'بعد از قطع برق، فایل و نقطه ادامه را نشان می‌دهد (POWER_LOSS_RECOVERY روشن است).',m:['recovery.resume()','M1000'],r:s=>S.home.r(s)+dlg({i:'bolt',c:'h',t:'POWER LOSS RECOVERY',tc:'hot',th:'th48',m:'Resume OrcaCube_v2_PLA_43m32s<br>from 62% (Z 18.60 mm)?',b:[{l:'Cancel',act:'home'},{l:'Resume',cls:'pri',i:'play',go:'heating'}]})});
+
+def('prepare',{fa:'آماده‌سازی (Prepare)',d:'هشت کار پرکاربرد پیش از چاپ.',m:['G28','M84','ui.preheat_m1() / m2()','thermalManager.cooldown()'],r:s=>`
+${hdr('PREPARE','<span>X 150.0</span><span>Y 150.0</span><span>Z 5.0</span>')}
+${tiles([{i:'autohome',l:'Auto home',act:'homing:xyz'},{i:'axes',l:'Move axis',go:'move'},{i:'steppers_off',l:'Disable steppers'},{i:'preheat',l:'Preheat PLA',go:'temp'},{i:'preheat',l:'Preheat ABS',go:'temp'},{i:'snow',l:'Cooldown'},{i:'spool',l:'Filament',go:'filament'},{i:'leveling',l:'Bed leveling',go:'leveling'}])}
+${F.idle()}`});
+
+def('move',{fa:'حرکت محورها',d:'حرکت دستی با گام ۰٫۱ تا ۱۰۰ میلی‌متر. به جای مکعب تزئینی، موقعیت واقعی محورها آمده است.',m:['ui.manual_move','G91 G1','G28','M84'],r:s=>{
+  const ax=[['X','150.0'],['Y','150.0'],['Z','5.0'],['E','0.0']];
+  const R=103,RI=50,RH=40,cx=104,cy=104,g=4.5*Math.PI/180;
+  const P=(r,a)=>`${(cx+r*Math.cos(a)).toFixed(1)} ${(cy+r*Math.sin(a)).toFixed(1)}`;
+  const seg=(a0,a1)=>{const go=g,gi=g*R/RI;return `M${P(R,a0+go)}A${R} ${R} 0 0 1 ${P(R,a1-go)}L${P(RI,a1-gi)}A${RI} ${RI} 0 0 0 ${P(RI,a0+gi)}Z`;};
+  const D=Math.PI/180, segs=[[-135,-45],[-45,45],[45,135],[135,225]].map(([a,b])=>`<path d="${seg(a*D,b*D)}" fill="rgba(14,40,80,.5)" stroke="#1c4f7a"/>`).join('');
+  const lab=(t,x,y)=>`<div class="ab big" style="left:${x-30}px;top:${y-16}px;width:60px;text-align:center">${t}</div>`;
+  return `${hdr('MOVE')}
+<div class="ab" style="left:12px;top:60px;width:208px;height:208px">
+  <svg width="208" height="208" viewBox="0 0 208 208" style="position:absolute;inset:0">${segs}<circle cx="${cx}" cy="${cy}" r="${RH-1}" fill="rgba(14,40,80,.5)" stroke="#35d6ff" stroke-width="2"/></svg>
+  ${lab('Y+',cx,cy-76)}${lab('Y-',cx,cy+76)}${lab('X-',cx-76,cy)}${lab('X+',cx+76,cy)}
+  <div class="ab tap" style="left:${cx-RH}px;top:${cy-RH}px;width:${2*RH}px;height:${2*RH}px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center" data-act="homing:xy">${ic('home',24)}<span class="acc">XY</span></div>
+</div>
+<div class="ab" style="left:234px;top:58px;width:236px;height:40px;border:1px solid var(--d-line);border-radius:20px;background:var(--d-panel);display:grid;grid-template-columns:repeat(4,1fr);padding:3px;gap:2px">${['0.1','1','10','100'].map(v=>`<div class="tap" data-act="dist:${v}" style="display:flex;align-items:center;justify-content:center;border-radius:16px;${s.dist===v?'border:1px solid var(--d-acc);background:rgba(53,214,255,.5);color:var(--d-text)':'color:var(--d-dim)'}">${v}</div>`).join('')}</div>
+${btn({i:'chev_u',l:'Z',st:'left:234px;top:104px;width:64px;height:54px'})}
+<div class="ab tap" style="left:234px;top:164px;width:64px;height:42px;display:flex;align-items:center;justify-content:center;gap:4px" data-act="homing:z">${ic('home',24)}<span class="acc">Z</span></div>
+${btn({i:'chev_d',l:'Z',st:'left:234px;top:212px;width:64px;height:54px'})}
+${btn({i:'chev_u',l:'E',st:'left:306px;top:104px;width:64px;height:54px'})}
+<div class="ab panel" style="left:306px;top:164px;width:64px;height:42px;display:flex;align-items:center;justify-content:center">${ic('extruder',24,'d')}</div>
+${btn({i:'chev_d',l:'E',st:'left:306px;top:212px;width:64px;height:54px'})}
+<div class="ab panel" style="left:378px;top:104px;width:92px;height:112px;padding:4px 8px">${ax.map(([a,v])=>`<div style="display:flex;justify-content:space-between;height:26px"><span class="dim">${a}</span><span>${v}</span></div>`).join('')}</div>
+${btn({i:'steppers_off',l:'Off',st:'left:378px;top:222px;width:92px;height:44px'})}
+${F.idle()}`;}});
+
+def('temp',{fa:'دما',d:'دمای فعلی و هدف نازل، بستر و سرعت فن به همراه پیش‌گرم و خنک‌سازی. نارنجی یعنی در حال گرم شدن.',m:['thermalManager.setTargetHotend()','setTargetBed()','M106'],r:s=>{
+  const cards=[{i:'nozzle',c:'h',l:'Nozzle',v:'208°C',cls:'hot',t:'Target 210°C',e:'Nozzle temp|210|°C|0|310'},{i:'bed',l:'Bed',v:'60°C',cls:'acc',t:'Target 60°C',e:'Bed temp|60|°C|0|150'},{i:'fan',l:'Fan',v:'80%',cls:'acc',t:'Speed 80%',e:'Fan speed|80|%|0|100'}];
+  return `${hdr('TEMPERATURE')}
+${cards.map((c,k)=>`<div class="ab panel" style="left:${10+k*156}px;top:58px;width:148px;height:166px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">${ic(c.i,32,c.c||'a')}<div class="lbl">${c.l}</div><div class="big ${c.cls}">${c.v}</div><div class="dim">${c.t}</div><div class="btn tap" style="width:116px;height:30px;margin-top:4px" data-edit="${c.e}">${ic('edit',20)}<span>Edit</span></div></div>`).join('')}
+${btn({i:'preheat',is:20,l:'Preheat PLA',st:'left:10px;top:230px;width:148px;height:38px'})}${btn({i:'preheat',is:20,l:'Preheat ABS',st:'left:166px;top:230px;width:148px;height:38px'})}${btn({i:'snow',is:20,l:'Cooldown',st:'left:322px;top:230px;width:148px;height:38px'})}
+${F.msg('Heating nozzle... 208 / 210°C','nozzle','h')}`;}});
+
+def('filament',{fa:'فیلامنت',d:'بارگذاری، تخلیه، پاک‌سازی و تعویض. زیر ۱۷۰ درجه اکسترود مجاز نیست، پس دمای نازل کنار دکمه‌ها دیده می‌شود.',m:['M701 / M702','M600','EXTRUDE_MINTEMP 170'],r:s=>`
+${hdr('FILAMENT')}
+<div class="ab panel" style="left:10px;top:60px;width:180px;bottom:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">${ic('nozzle',40,'h')}<div class="lbl">Nozzle</div><div class="big hot">205°C</div><div class="dim tap" data-edit="Nozzle temp|210|°C|0|310">Target 210°C</div>
+<div style="display:flex;gap:8px;margin-top:8px"><div class="btn tap" style="width:70px;height:30px">PLA</div><div class="btn tap" style="width:70px;height:30px">ABS</div></div></div>
+${tiles([{i:'load',l:'Load',go:'fil_wait'},{i:'unload',l:'Unload',go:'fil_wait'},{i:'purge',l:'Purge'},{i:'change',l:'Change',go:'fil_wait'}],{cols:2,left:200})}
+${F.msg('Extrusion needs at least 170°C')}`});
+
+def('fil_wait',{fa:'مراحل تعویض فیلامنت',d:'پیام‌های ADVANCED_PAUSE_FEATURE به شکل یک مسیر پنج‌مرحله‌ای که مرحله فعلی آن مشخص است.',m:['lcd_pause_show_message()','PAUSE_MESSAGE_INSERT','PAUSE_RESPONSE_EXTRUDE_MORE'],r:s=>`
+${hdr('FILAMENT CHANGE','',false)}
+<div class="ab" style="left:14px;right:14px;top:60px;display:flex;justify-content:space-between">${['Park','Unload','Insert','Load','Purge'].map((t,k)=>`<div class="stp ${k<2?'done':k===2?'cur':''}"><i></i><span>${t}</span></div>`).join('')}</div>
+<div class="ab" style="left:0;right:0;top:100px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">${ic('spool',64)}<div class="mid">Insert filament and press Continue</div><div class="dim">Nozzle 210°C · heater timeout 4:52</div></div>
+${btn({i:'purge',l:'Purge more',st:'left:20px;top:228px;width:214px;height:40px'})}${btn({i:'play',l:'Continue',cls:'pri',back:1,st:'left:246px;top:228px;width:214px;height:40px'})}
+${F.msg(`Print paused · ${FN}`,'pause','h')}`});
+
+def('busy',{fa:'پنجره انتظار',d:'برای کارهای طولانی مثل Home. در پیش‌نمایش بعد از ۲ ثانیه بسته می‌شود.',m:['G28','ui.set_status()'],r:s=>{const H={xyz:['Homing XYZ...','G28'],xy:['Homing X Y...','G28 X Y'],z:['Homing Z...','G28 Z'],zo:['Homing, then Z0...','G28 + G1 Z0'],m48:['Probe test...','M48']}[s.homing||'xyz'];const prev=(s.stack&&s.stack[s.stack.length-2])||'prepare';return S[prev].r(s)+`<div class="ab dov"></div><div class="ab pop">${ic('hourglass',40)}<div class="mid">${H[0]}</div><div class="dim">${H[1]}</div></div>`;}});
+
+def('leveling',{fa:'تراز بستر',d:'همه ابزارهای تراز با BLTouch در یک صفحه: G29، دیدن و ویرایش مش، Fade، گوشه‌ها و Z offset.',m:['G29','M420 S1','M420 Z10','LCD_BED_TRAMMING'],r:s=>`
+${hdr('BED LEVELING',`<span>5×5 · ${s.tg.lev?'ON':'OFF'}</span>`)}
+${tiles([{i:'leveling',l:'Auto level',go:'probing'},{i:'mesh',l:'Mesh view',go:'meshview'},{i:'mesh_edit',l:'Edit mesh',go:'meshedit'},{i:'check_c',l:'Leveling',v:s.tg.lev?'ON':'OFF',cls:s.tg.lev?'on':'',c:s.tg.lev?'a':'d',act:'tg:lev'},{i:'layers',l:'Fade',v:'10 mm',edit:'Fade height|10|mm|0|100'},{i:'tramming',l:'Tramming',go:'tramming'},{i:'zoffset',l:'Z offset',go:'zoffset'},{i:'probe',l:'BLTouch',go:'bltouch'}])}
+${F.idle()}`});
+
+def('probing',{fa:'در حال تراز خودکار (G29)',d:'پیشرفت پراب روی شبکه ۵×۵ (AUTO_BED_LEVELING_BILINEAR). در پیش‌نمایش خودکار به نقشه مش می‌رود.',m:['G29','GRID_MAX_POINTS 5×5'],r:s=>{
+  let dots='';for(let j=0;j<5;j++)for(let i=0;i<5;i++){const idx=j*5+(j%2?4-i:i),x=10+i*40,y=170-j*40;dots+=idx<13?`<circle cx="${x}" cy="${y}" r="6" fill="#35d6ff"/>`:idx===13?`<circle cx="${x}" cy="${y}" r="8" fill="none" stroke="#ff9f43" stroke-width="2"/>`:`<circle cx="${x}" cy="${y}" r="5" fill="none" stroke="#1c4f7a" stroke-width="2"/>`;}
+  let lines='';for(let k=0;k<5;k++){lines+=`<line x1="${10+k*40}" y1="10" x2="${10+k*40}" y2="170" stroke="#1c4f7a"/><line x1="10" y1="${10+k*40}" x2="170" y2="${10+k*40}" stroke="#1c4f7a"/>`;}
+  return `${hdr('AUTO LEVEL','',false)}
+<div class="ab panel" style="left:24px;top:62px;width:198px;height:198px;padding:8px"><svg width="180" height="180" viewBox="0 0 180 180" shape-rendering="crispEdges">${lines}<g shape-rendering="auto">${dots}</g></svg></div>
+<div class="ab" style="left:244px;right:20px;top:66px"><div class="lbl">Probing point</div><div class="big acc" style="margin-top:4px">14 / 25</div><div class="pbar" style="height:10px;margin-top:12px"><i style="width:56%"></i></div>
+<div class="kv" style="margin-top:16px"><span class="dim">X</span><span class="mid">170.0</span></div><div class="kv"><span class="dim">Y</span><span class="mid">80.0</span></div><div class="kv"><span class="dim">Z</span><span class="mid hot">-0.084</span></div></div>
+${F.msg('G29 bilinear 5×5 · keep hands off the bed','leveling','d')}`;}});
+
+def('meshview',{fa:'نقشه مش',d:'نقشه رنگی ۵×۵ با کمینه، بیشینه و دامنه. لبه جلوی بستر پایین است. آبی پایین‌تر و نارنجی بالاتر از میانگین است.',m:['bedlevel.z_values[][]','M420 V'],r:s=>{
+  const m=s.mesh,f=m.flat(),mn=Math.min(...f),mx=Math.max(...f);let cells='';
+  for(let j=4;j>=0;j--)for(let i=0;i<5;i++){const v=m[j][i];cells+=`<div class="mc" style="background:${meshCol(v,mn,mx)}">${fmtM(v)}</div>`;}
+  return `${hdr('MESH VIEW','<span>5×5 · bilinear</span>')}
+<div class="ab mgrid" style="left:16px;top:60px;width:200px;height:200px;grid-template-columns:repeat(5,1fr)">${cells}</div>
+<div class="ab" style="left:232px;right:10px;top:60px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${[['Min',mn],['Max',mx],['Range',mx-mn]].map(([l,v])=>`<div class="panel" style="padding:6px 8px"><div class="lbl">${l}</div><div class="mid">${(l!=='Range'&&v>0?'+':'')+v.toFixed(2)}</div></div>`).join('')}</div>
+<div class="ab" style="left:232px;right:10px;top:136px"><div style="height:12px;border-radius:6px;background:linear-gradient(90deg,#2a5cff,#35d6ff,#ff9f43)"></div><div style="display:flex;justify-content:space-between;margin-top:4px" class="dim"><span>low</span><span>high</span></div><div class="dim" style="margin-top:6px">Front edge at the bottom.</div></div>
+${btn({i:'leveling',l:'Re-probe',go:'probing',st:'left:232px;top:220px;width:114px;height:42px'})}${btn({i:'store',l:'Save',cls:'pri',go:'store_dlg',st:'left:354px;top:220px;width:116px;height:42px'})}
+${F.idle()}`;}});
+
+def('meshedit',{fa:'ویرایش مش',d:'نقطه را روی شبکه لمس کنید و با − و + به اندازه MESH_EDIT_Z_STEP (۰٫۰۲۵) تغییر دهید. در پیش‌نمایش کار می‌کند.',m:['M421 I J Z','MESH_EDIT_Z_STEP 0.025'],r:s=>{
+  const m=s.mesh,f=m.flat(),mn=Math.min(...f),mx=Math.max(...f),[ci,cj]=s.cell;let cells='';
+  for(let j=4;j>=0;j--)for(let i=0;i<5;i++){const v=m[j][i];cells+=`<div class="mc tap${i===ci&&j===cj?' sel':''}" data-act="cell:${i},${j}" style="background:${meshCol(v,mn,mx)}">${fmtM(v)}</div>`;}
+  const v=m[cj][ci];
+  return `${hdr('EDIT MESH')}
+<div class="ab mgrid" style="left:16px;top:60px;width:200px;height:200px;grid-template-columns:repeat(5,1fr)">${cells}</div>
+<div class="ab" style="left:232px;right:10px;top:62px"><div class="lbl">Point</div><div class="mid">I ${ci} · J ${cj}</div><div class="big acc" style="margin-top:10px">${(v>0?'+':'')+v.toFixed(3)}<span class="dim" style="font-size:16px"> mm</span></div><div class="dim" style="margin-top:4px">step 0.025 mm</div></div>
+${btn({i:'minus',is:28,act:'mz:-',st:'left:232px;top:168px;width:114px;height:48px'})}${btn({i:'plus',is:28,act:'mz:+',st:'left:354px;top:168px;width:116px;height:48px'})}
+${btn({i:'check',l:'Done',cls:'pri',back:1,st:'left:232px;top:224px;width:238px;height:40px'})}
+${F.msg(`M421 I${ci} J${cj} Z${v.toFixed(3)} · store to keep`)}`;}});
+
+def('zoffset',{fa:'تنظیم Z offset',d:'تست کاغذ برای فاصله نازل تا بستر. مقدار با گام انتخابی تغییر می‌کند و در پیش‌نمایش کار می‌کند.',m:['PROBE_OFFSET_WIZARD','M851 Z','M290'],r:s=>`
+${hdr('Z OFFSET')}
+<div class="ab" style="left:10px;width:150px;top:70px;display:flex;flex-direction:column;align-items:center;gap:12px">${ic('zoffset',80)}<div class="lbl" style="text-align:center">Probe Z offset</div></div>
+<div class="ab big acc" style="left:170px;right:10px;top:62px;text-align:center">${s.zo.toFixed(2)}<span class="dim" style="font-size:16px"> mm</span></div>
+<div class="ab" style="left:170px;right:10px;top:104px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${['0.01','0.05','0.10'].map(v=>`<div class="btn tap ${s.zstep===+v?'sel':''}" style="height:32px" data-act="zstep:${v}">${v}</div>`).join('')}</div>
+${btn({i:'chev_u',is:28,l:'Z +',act:'zo:+',st:'left:170px;top:146px;width:146px;height:64px'})}${btn({i:'chev_d',is:28,l:'Z -',act:'zo:-',st:'left:324px;top:146px;width:146px;height:64px'})}
+${btn({i:'autohome',l:'Home',act:'homing:zo',st:'left:170px;top:220px;width:146px;height:44px'})}${btn({i:'store',l:'Save',cls:'pri',go:'store_dlg',st:'left:324px;top:220px;width:146px;height:44px'})}
+${F.msg('Paper test: light drag on the paper is right')}`});
+
+def('tramming',{fa:'تنظیم گوشه‌های بستر',d:'نازل به هر گوشه می‌رود و پیچ آن گوشه با تست کاغذ تنظیم می‌شود. سبز تمام‌شده، نارنجی گوشه فعلی.',m:['LCD_BED_TRAMMING','BED_TRAMMING_INSET_LFRB 30'],r:s=>`
+${hdr('TRAMMING')}
+<div class="ab panel" style="left:20px;top:60px;width:206px;height:206px">
+  <div class="knob" style="left:14px;top:14px">BL</div><div class="knob" style="right:14px;top:14px">BR</div>
+  <div class="knob ok" style="left:14px;bottom:14px">FL</div><div class="knob cur" style="right:14px;bottom:14px">FR</div>
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">${ic('tramming',40,'d')}</div>
+</div>
+<div class="ab" style="left:242px;right:14px;top:62px"><div class="lbl">Corner 2 of 4</div><div class="mid hot" style="margin-top:4px">Front right</div><div class="dim" style="margin-top:12px;line-height:1.4">Turn the knob until the nozzle just grips the paper.</div></div>
+${btn({i:'chev_r',l:'Next',cls:'pri',st:'left:242px;top:220px;width:110px;height:44px'})}${btn({i:'check',l:'Done',back:1,st:'left:360px;top:220px;width:110px;height:44px'})}
+${F.msg('Nozzle at Z 0.0 · 30 mm from the edge')}`});
+
+def('bltouch',{fa:'ابزارهای BLTouch',d:'باز و بسته کردن پین، تست خودکار، رفع آلارم و تست تکرارپذیری.',m:['M280 P0 S10 / S90','M280 P0 S120 / S160','M48'],r:s=>`
+${hdr('BLTOUCH')}
+${tiles([{i:'deploy',l:'Deploy'},{i:'stow',l:'Stow'},{i:'check_c',l:'Self-test'},{i:'restore',l:'Reset alarm'},{i:'stats',l:'M48 test',act:'homing:m48'},{i:'probe',l:'Offsets',go:'probeset'}],{cols:3})}
+${F.msg('BLTouch stowed · no alarm','probe','d')}`});
+
+def('settings',{fa:'تنظیمات',d:'دوازده بخش تنظیمات در یک صفحه، بدون صفحه‌بندی.',m:['menu_configuration()','menu_advanced_settings()'],r:s=>`
+${hdr('SETTINGS')}
+${tiles([{i:'thermo',l:'Temperature',go:'settemp'},{i:'motion',l:'Motion',go:'motion'},{i:'spool',l:'Filament',go:'filset'},{i:'probe',l:'Probe',go:'probeset'},
+{i:'display',l:'Display',go:'display'},{i:'leveling',l:'Leveling',go:'leveling'},{i:'bolt',l:s.tg.plr?'Recovery on':'Recovery off',act:'tg:plr',cls:s.tg.plr?'on':'',c:s.tg.plr?'a':'d'},{i:'info',l:'About',go:'about'},
+{i:'store',l:'Store',go:'store_dlg'},{i:'load_set',l:'Load',go:'load_dlg'},{i:'restore',l:'Restore',go:'restore_dlg'},{i:'target',l:'Touch cal.',go:'touchcal'}],{cols:4,is:32,cls:'nc'})}
+${F.idle()}`});
+
+def('settemp',{fa:'تنظیمات دما',d:'دماهای پیش‌گرم PLA و ABS (مقادیر فعلی فریم‌ور شما) و ورود به تنظیم خودکار PID.',m:['ui.material_preset[]','M145','M303'],r:s=>`
+${hdr('PREHEAT &amp; PID')}
+<div class="ab lbl" style="left:10px;width:226px;top:56px;text-align:center">PLA</div><div class="ab lbl" style="left:244px;width:226px;top:56px;text-align:center">ABS</div>
+${rows([{i:'nozzle',l:'Nozzle',v:'180',u:'°C',edit:'PLA nozzle|180|°C|0|310'},{i:'nozzle',l:'Nozzle',v:'240',u:'°C',edit:'ABS nozzle|240|°C|0|310'},
+{i:'bed',l:'Bed',v:'60',u:'°C',edit:'PLA bed|60|°C|0|150'},{i:'bed',l:'Bed',v:'85',u:'°C',edit:'ABS bed|85|°C|0|150'},
+{i:'fan',l:'Fan',v:'0',u:'%',edit:'PLA fan|0|%|0|100'},{i:'fan',l:'Fan',v:'0',u:'%',edit:'ABS fan|0|%|0|100'}],{top:80,h:40})}
+${btn({i:'pid',l:'PID hotend',act:'tab:hotend',go:'pid',st:'left:10px;top:226px;width:226px;height:42px'})}${btn({i:'pid',l:'PID bed',act:'tab:bed',go:'pid',st:'left:244px;top:226px;width:226px;height:42px'})}
+${F.idle()}`});
+
+def('pid',{fa:'تنظیم خودکار PID',d:'انتخاب نازل یا بستر، دمای هدف و تعداد چرخه. نمودار نوسان دما با خط ساده رسم می‌شود که روی دستگاه ارزان است.',m:['M303 E0 S210 C8 U1','M303 E-1 S60 C8 U1','PID_AUTOTUNE_MENU'],r:s=>{
+  let d='';for(let x=0;x<=216;x+=3){const y=x<40?136-x*2.6:52+38*Math.exp(-(x-40)/70)*Math.sin((x-40)/11);d+=(x?'L':'M')+x+' '+y.toFixed(1);}
+  const bed=s.tab==='bed';
+  return `${hdr('PID TUNE')}
+<div class="ab" style="left:10px;width:220px;top:60px;display:grid;grid-template-columns:1fr 1fr;gap:6px">${[['hotend','Hotend'],['bed','Bed']].map(([k,l])=>`<div class="btn tap ${s.tab===k?'sel':''}" style="height:34px" data-act="tab:${k}">${l}</div>`).join('')}</div>
+${rows([{i:bed?'bed':'nozzle',l:'Target',v:bed?'60':'210',u:'°C',edit:bed?'PID bed target|60|°C|0|150':'PID target|210|°C|0|310'},{i:'refresh',l:'Cycles',v:'8',edit:'Cycles|8||3|20'}],{cols:1,top:102,h:40,right:250})}
+${btn({i:'play',l:'Start',cls:'pri',st:'left:10px;top:196px;width:106px;height:40px'})}${btn({i:'store',l:'Save',go:'store_dlg',st:'left:124px;top:196px;width:106px;height:40px'})}
+<div class="ab panel" style="left:240px;right:10px;top:60px;height:176px;padding:8px"><svg width="218" height="158" viewBox="0 0 218 158"><line x1="0" y1="52" x2="218" y2="52" stroke="#7fa8c6" stroke-dasharray="4 4"/><line x1="0" y1="157" x2="218" y2="157" stroke="#1c4f7a"/><path d="${d}" fill="none" stroke="#35d6ff" stroke-width="2"/></svg></div>
+<div class="ab dim" style="left:240px;right:10px;top:244px;text-align:center">Kp 22.20  Ki 1.08  Kd 114.00</div>
+<div class="ab dim" style="left:10px;width:220px;top:244px">Cycle 5 of 8</div>
+${F.msg(bed?'M303 E-1 S60 C8 U1, then Store settings':'M303 E0 S210 C8 U1, then Store settings','pid','d')}`;}});
+
+def('motion',{fa:'حرکت',d:'خلاصه پارامترهای حرکتی با مقادیر فعلی Configuration.h شما (CLASSIC_JERK روشن است).',m:['M92','M203','M201 / M204','M205'],r:s=>`
+${hdr('MOTION')}
+${rows([{i:'ruler',l:'Steps/mm',v:'X88.9 Y88.9 Z1600 E413',go:'steps'},{i:'speed',l:'Max feedrate',v:'X300 Y300 Z4 E35',go:'steps'},{i:'accel',l:'Acceleration',v:'P5000 R10000 T5000',go:'steps'},{i:'jerk',l:'Jerk',v:'X10 Y10 Z0.3 E5',go:'steps'}],{cols:1,top:60,h:46})}
+${F.msg('Changes stay until power off unless stored (M500)')}`});
+
+def('steps',{fa:'گام بر میلی‌متر',d:'ویرایش گام هر محور (EDITABLE_STEPS_PER_UNIT روشن است). صفحه‌های Max feedrate، Acceleration و Jerk همین قالب را دارند.',m:['M92','EDITABLE_STEPS_PER_UNIT'],r:s=>`
+${hdr('STEPS/MM')}
+${rows([{ltr:'X',l:'X axis',v:'88.8888',edit:'X steps/mm|88.8888||1|5000'},{ltr:'Y',l:'Y axis',v:'88.8888',edit:'Y steps/mm|88.8888||1|5000'},{ltr:'Z',l:'Z axis',v:'1600.00',edit:'Z steps/mm|1600||1|5000'},{i:'extruder',l:'Extruder E',v:'413.00',edit:'E steps/mm|413||1|5000'}],{cols:1,top:60,h:44})}
+${F.msg('M92 X88.8888 Y88.8888 Z1600 E413')}`});
+
+def('filset',{fa:'تنظیمات فیلامنت',d:'Linear Advance، قطر، طول‌های تعویض، کمینه دمای اکسترود و سنسور فیلامنت.',m:['M900 K','M200 D','M603','M412','EXTRUDE_MINTEMP'],r:s=>`
+${hdr('FILAMENT SETUP')}
+${rows([{i:'la',l:'K factor',v:'0.00',edit:'Linear advance K|0.00||0|10'},{i:'diameter',l:'Diameter',v:'1.75',u:'mm',edit:'Filament diameter|1.75|mm|1|3'},
+{i:'unload',l:'Unload',v:'100',u:'mm',edit:'Unload length|100|mm|0|800'},{i:'load',l:'Fast load',v:'0',u:'mm',edit:'Fast load length|0|mm|0|800'},
+{i:'purge',l:'Purge',v:'50',u:'mm',edit:'Purge length|50|mm|0|200'},{i:'thermo',l:'Min temp',v:'170',u:'°C',edit:'Extrude min temp|170|°C|0|275'},
+{i:'runout',l:'Sensor',tg:s.tg.run,act:'tg:run'},{i:'ruler',l:'Distance',v:'25',u:'mm',edit:'Runout distance|25|mm|0|100'}],{top:60,h:46})}
+${F.idle()}`});
+
+def('probeset',{fa:'تنظیمات پراب',d:'آفست BLTouch نسبت به نازل (مقادیر فعلی شما: ‎-45، ‎-8، ‎-2) و میان‌بر ابزارها.',m:['M851 X Y Z','M420 Z'],r:s=>`
+${hdr('PROBE')}
+${rows([{ltr:'X',l:'X offset',v:'-45.0',u:'mm',edit:'Probe X offset|-45.0|mm|-100|100'},{ltr:'Y',l:'Y offset',v:'-8.0',u:'mm',edit:'Probe Y offset|-8.0|mm|-100|100'},
+{ltr:'Z',l:'Z offset',v:s.zo.toFixed(2),u:'mm',go:'zoffset'},{i:'layers',l:'Fade',v:'10.0',u:'mm',edit:'Fade height|10|mm|0|100'}],{top:60,h:44})}
+${tiles([{i:'probe',l:'BLTouch',go:'bltouch'},{i:'zoffset',l:'Z wizard',go:'zoffset'},{i:'stats',l:'M48 test',act:'homing:m48'}],{cols:3,top:160,is:40})}
+${F.idle()}`});
+
+def('display',{fa:'نمایشگر',d:'روشنایی، خاموشی خودکار، صدای لمس و زبان. چند گزینه باید در Configuration روشن شوند.',m:['DISPLAY_SLEEP_MINUTES','SOUND_MENU_ITEM','M995'],r:s=>`
+${hdr('DISPLAY')}
+${rows([{i:'display',l:'Brightness',v:'80',u:'%',edit:'Brightness|80|%|10|100'},{i:'moon',l:'Sleep after',v:'5',u:'min',edit:'Sleep after|5|min|0|99'},{i:'bell',l:'Touch sound',tg:s.tg.snd,act:'tg:snd'},{i:'globe',l:'Language',v:'English'}],{cols:1,top:60,h:36})}
+${btn({i:'target',l:'Touch calibration',go:'touchcal',st:'left:10px;right:10px;top:228px;height:40px'})}
+${F.idle()}`});
+
+def('about',{fa:'درباره دستگاه',d:'مشخصات سخت‌افزار و آمار چاپ از PRINTCOUNTER.',m:['M115','M78'],r:s=>`
+${hdr('ABOUT')}
+<div class="ab panel" style="left:10px;top:60px;width:226px;height:208px;padding:8px 12px"><div class="lbl" style="margin-bottom:4px">Printer</div>${[['Firmware','Marlin 2.1.x'],['Machine','X5 v3'],['Bed','300×300 mm'],['Board','Robin Nano V3.1'],['MCU','STM32F407VET6']].map(([k,v])=>`<div class="kv"><span class="dim">${k}</span><span>${v}</span></div>`).join('')}</div>
+<div class="ab panel" style="left:244px;top:60px;width:226px;height:208px;padding:8px 12px"><div class="lbl" style="margin-bottom:4px">Statistics</div>${[['Prints','142'],['Completed','128'],['Print time','12d 4h'],['Longest','9h 41m'],['Filament','1.21 km']].map(([k,v])=>`<div class="kv"><span class="dim">${k}</span><span>${v}</span></div>`).join('')}</div>
+${F.idle()}`});
+
+const eep=(t,i,m,c,tc)=>s=>S.settings.r(s)+dlg({i,c,t,tc,m,b:[{l:'Cancel',back:1},{l:'OK',cls:'pri',i:'check',back:1}]});
+def('store_dlg',{fa:'ذخیره تنظیمات',d:'ذخیره همه تنظیمات فعلی در EEPROM.',m:['M500','EEPROM_SETTINGS'],r:eep('STORE SETTINGS?','store','Save the current settings to EEPROM.<br>M500')});
+def('load_dlg',{fa:'بارگذاری تنظیمات',d:'خواندن تنظیمات ذخیره‌شده از EEPROM.',m:['M501'],r:eep('LOAD SETTINGS?','load_set','Read saved settings from EEPROM.<br>M501')});
+def('restore_dlg',{fa:'بازگشت به پیش‌فرض',d:'تنظیمات کارخانه؛ برای ماندگاری باید بعد از آن Store زده شود.',m:['M502'],r:eep('RESTORE DEFAULTS?','restore','Reset to firmware defaults (M502).<br>Store afterwards to keep them.','h','hot')});
+
+def('keypad',{fa:'صفحه‌کلید عددی',d:'ویرایشگر عمومی برای همه مقدارها: عدد مستقیم، یا ±۱ و ±۱۰. در پیش‌نمایش واقعاً کار می‌کند.',m:['MenuEditItemBase::draw_edit_screen()','TOUCH_SCREEN'],r:s=>{const e=s.edit;return `
+${hdr(e.label.toUpperCase())}
+<div class="ab panel" style="left:10px;top:60px;width:220px;height:84px;display:flex;flex-direction:column;justify-content:center;padding:0 16px">
+  <div class="big acc">${e.val||'0'}<span class="dim" style="font-size:16px"> ${e.unit}</span></div><div class="dim" style="margin-top:4px">min ${e.min} · max ${e.max}</div></div>
+<div class="ab" style="left:10px;top:152px;width:220px;height:102px;display:grid;grid-template-columns:1fr 1fr;gap:6px">${['-10','+10','-1','+1'].map(v=>`<div class="btn tap mid" data-act="inc:${v}">${v}</div>`).join('')}</div>
+<div class="ab" style="left:240px;right:10px;top:60px;height:194px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${[...'789456123','.','0','bs'].map(k=>`<div class="btn tap mid" data-act="key:${k}">${k==='bs'?ic('backspace',28):k}</div>`).join('')}</div>
+${btn({i:'close',l:'Cancel',back:1,st:'left:10px;top:262px;width:226px;height:48px'})}${btn({i:'check',l:'OK',cls:'pri',back:1,st:'left:244px;top:262px;width:226px;height:48px'})}`;}});
+
+def('touchcal',{fa:'کالیبره لمسی',d:'چهار نقطه را به ترتیب لمس کنید.',m:['M995','TOUCH_SCREEN_CALIBRATION'],r:s=>`
+<div class="ab" style="left:12px;top:12px">${ic('target',40)}</div>
+<div class="ab" style="left:0;right:0;top:132px;text-align:center"><div class="mid">Touch the target</div><div class="dim" style="margin-top:8px">Point 1 of 4</div></div>
+${btn({l:'Cancel',back:1,st:'left:180px;top:250px;width:120px;height:40px'})}`});
+
+def('error',{fa:'توقف اضطراری',d:'صفحه kill مارلین برای خطاهایی مثل Thermal Runaway. هیچ دکمه‌ای ندارد؛ فقط ریست.',m:['MarlinUI::draw_kill_screen()','THERMAL_PROTECTION_HOTENDS'],r:s=>`
+<div class="ab" style="left:0;right:0;top:40px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">${ic('flame',64,'b')}<div class="big badc">PRINTER HALTED</div><div class="mid">Thermal Runaway, E0</div><div class="dim">Please reset the printer.</div></div>
+${F.msg('Heaters and motors are off','warning','b')}`});
+
+const G=[
+  ['اصلی و چاپ',['boot','home','media','files','print_confirm','heating','printing','tune','confirm_stop','runout','finished','recovery']],
+  ['آماده‌سازی',['prepare','move','temp','filament','fil_wait','busy']],
+  ['تراز بستر و BLTouch',['leveling','probing','meshview','meshedit','zoffset','tramming','bltouch']],
+  ['تنظیمات',['settings','settemp','pid','motion','steps','filset','probeset','display','about','store_dlg','load_dlg','restore_dlg']],
+  ['عمومی',['keypad','touchcal','error']]
+];
+const fa=n=>n.toLocaleString('fa-IR');
+
+/* =========================================================
+   6. STATE + PROTOTYPE
+   ========================================================= */
+const DEF={homing:'xyz',paused:false,dist:'10',media:'usb',path:'/',sel:FN,tab:'hotend',tg:{lev:true,run:true,plr:true,snd:true},zo:-2.00,zstep:0.05,cell:[2,2],
+  mesh:[[-0.14,-0.08,-0.02,0.03,0.07],[-0.10,-0.04,0.00,0.05,0.10],[-0.06,-0.01,0.02,0.08,0.13],[-0.03,0.01,0.05,0.11,0.16],[0.00,0.04,0.09,0.14,0.19]],
+  edit:{label:'Nozzle temp',val:'210',unit:'°C',min:0,max:310},fresh:true};
+const st=JSON.parse(JSON.stringify(DEF)); st.stack=['home'];
+const $=id=>document.getElementById(id);
+const pscr=$('pscr'), pdev=$('pdev'), fitbox=$('fitbox');
+let one=false, timer=0;
+
+function fit(){const w=fitbox.clientWidth;const k=one?1:Math.min(1.6,w/480);pdev.style.width=480*k+'px';pdev.style.height=320*k+'px';pscr.style.transform=`scale(${k})`;}
+new ResizeObserver(fit).observe(fitbox);
+
+function draw(){
+  clearTimeout(timer);
+  const id=st.stack[st.stack.length-1], sc=S[id];
+  pscr.innerHTML=sc.r(st);
+  $('aT').textContent=sc.fa; $('aId').textContent=id; $('aD').textContent=sc.d;
+  $('aM').innerHTML=sc.m.map(c=>`<code>${c}</code>`).join('');
+  $('pick').value=id;
+  const swap=n=>()=>{st.stack[st.stack.length-1]=n;draw();};
+  if(id==='heating') timer=setTimeout(swap('printing'),2600);
+  if(id==='probing') timer=setTimeout(swap('meshview'),3000);
+  if(id==='busy') timer=setTimeout(back,1800);
+  if(id==='boot') timer=setTimeout(()=>{st.stack=['home'];draw();},2000);
+}
+function go(id){st.stack.push(id);draw();}
+function back(){if(st.stack.length>1)st.stack.pop();draw();}
+function openScreen(id){st.stack=id==='home'?['home']:['home',id];draw();}
+
+function act(a){
+  const [k,v]=a.split(':');
+  if(k==='pause') st.paused=!st.paused;
+  else if(k==='home'){st.stack=['home'];}
+  else if(k==='stopnow'){st.paused=false;st.stack=['home'];}
+  else if(k==='dist') st.dist=v;
+  else if(k==='homing'){st.homing=v;st.stack.push('busy');}
+  else if(k==='media') st.media=v;
+  else if(k==='vol'){st.media=v;st.path='/';st.stack.push('files');}
+  else if(k==='cd') st.path=v==='..'?'/':'/'+v;
+  else if(k==='pick'){st.sel=v;st.stack.push('print_confirm');}
+  else if(k==='tab') st.tab=v;
+  else if(k==='tg') st.tg[v]=!st.tg[v];
+  else if(k==='zstep') st.zstep=+v;
+  else if(k==='zo') st.zo=Math.round((st.zo+(v==='+'?1:-1)*st.zstep)*100)/100;
+  else if(k==='cell') st.cell=v.split(',').map(Number);
+  else if(k==='mz'){const [i,j]=st.cell;st.mesh[j][i]=Math.round((st.mesh[j][i]+(v==='+'?.025:-.025))*1000)/1000;}
+  else if(k==='key'){const e=st.edit;let s=st.fresh?'':String(e.val);st.fresh=false;
+    if(v==='bs') s=s.slice(0,-1); else if(v==='.'){if(!s.includes('.'))s=(s||'0')+'.';} else if(s.length<7) s=s==='0'?v:s+v;
+    e.val=s;}
+  else if(k==='inc'){const e=st.edit;const dec=(String(e.val).split('.')[1]||'').length;let n=(parseFloat(e.val)||0)+parseFloat(v);n=Math.min(e.max,Math.max(e.min,n));e.val=n.toFixed(dec);st.fresh=false;}
+  draw();
+}
+pscr.addEventListener('click',e=>{
+  const t=e.target.closest('[data-go],[data-back],[data-edit],[data-act]'); if(!t) return;
+  if(t.dataset.edit){const [label,val,unit,min,max]=t.dataset.edit.split('|');st.edit={label,val,unit,min:+min,max:+max};st.fresh=true;go('keypad');return;}
+  if(t.dataset.act) { if(t.dataset.go){const [k,v]=t.dataset.act.split(':');if(k==='tab')st.tab=v;} else {act(t.dataset.act);return;} }
+  if(t.hasAttribute('data-back')){back();return;}
+  if(t.dataset.go) go(t.dataset.go);
+});
+$('pick').innerHTML=G.map(([g,ids])=>`<optgroup label="${g}">${ids.map(id=>`<option value="${id}">${S[id].fa} · ${id}</option>`).join('')}</optgroup>`).join('');
+$('pick').addEventListener('change',e=>openScreen(e.target.value));
+$('bHome').addEventListener('click',()=>{st.stack=['home'];draw();});
+$('bBack').addEventListener('click',back);
+$('b11').addEventListener('click',e=>{one=!one;e.currentTarget.setAttribute('aria-pressed',one);fit();});
+
+/* =========================================================
+   7. GALLERY
+   ========================================================= */
+const gs=JSON.parse(JSON.stringify(DEF));
+const total=G.reduce((n,[,ids])=>n+ids.length,0);
+$('gal').innerHTML=G.map(([g,ids])=>`<div class="group"><h3>${g} <small>${fa(ids.length)} صفحه</small></h3><div class="thumbs">${ids.map(id=>`<button class="th" type="button" data-open="${id}"><div class="frame"><div class="dev" dir="ltr" style="width:240px;height:160px"><div class="scr" style="transform:scale(.5)">${S[id].r(gs)}</div></div></div><div class="cap"><span>${S[id].fa}</span><span class="en">${id}</span></div></button>`).join('')}</div></div>`).join('');
+$('gal').addEventListener('click',e=>{const b=e.target.closest('[data-open]');if(!b)return;openScreen(b.dataset.open);$('live').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});});
+$('screensSub').textContent=`${fa(total)} صفحه در ${fa(G.length)} گروه، هر کدام با اندازه واقعی ۴۸۰×۳۲۰ و نصف اندازه نمایش داده شده‌اند. روی هر صفحه بزنید تا در پیش‌نمایش زنده باز شود.`;
+draw();
+
+/* =========================================================
+   8. ICON FOUNDRY + C EXPORT
+   ========================================================= */
+const usedNames=new Set([...used.values()].map(([n])=>n));
+const SIZES=[24,28,32,40,48,64,80];
+let isz=48;
+const pascal=n=>n.split('_').map(w=>w[0].toUpperCase()+w.slice(1)).join('');
+function toC(n,s){
+  const r=raster(n,s), id=`${n}_${s}x${s}x1`;
+  let o=`// ${n} ${s}x${s}, 1 bit per pixel, ${r.bytes.length} bytes\nconst uint8_t ${id}[${r.bytes.length}] = {\n`;
+  for(let i=0;i<r.bytes.length;i+=12) o+='  '+Array.from(r.bytes.slice(i,i+12),b=>'0x'+b.toString(16).padStart(2,'0')).join(', ')+',\n';
+  return o+`};\nconst tImage ${pascal(n)}_${s}x${s}x1 = { (void *)${id}, ${s}, ${s}, GREYSCALE1 };\n\n`;
+}
+const wrapC=body=>`/**\n * NOVIN3DP galaxy UI icons (GREYSCALE1, MSB first, rows padded to a byte)\n */\n#include "../../../inc/MarlinConfigPre.h"\n\n#if HAS_GRAPHICAL_TFT\n\n#include "../tft_image.h"\n\n${body}#endif // HAS_GRAPHICAL_TFT\n`;
+function drawIcons(){
+  $('isz').innerHTML=SIZES.map(s=>`<button type="button" aria-pressed="${s===isz}" data-s="${s}">${s}</button>`).join('');
+  $('igrid').innerHTML='';
+  for(const n of Object.keys(I)){
+    const r=raster(n,isz), k=Math.max(1,Math.floor(100/isz)), cv=document.createElement('canvas');
+    cv.width=cv.height=isz*k; const x=cv.getContext('2d'); x.imageSmoothingEnabled=false;
+    x.drawImage(r.canvas,0,0,isz*k,isz*k); x.globalCompositeOperation='source-in'; x.fillStyle='#35d6ff'; x.fillRect(0,0,cv.width,cv.height);
+    const b=document.createElement('button'); b.type='button'; b.className='icard'; b.title=`کپی کد C برای ${n}`;
+    b.innerHTML=`<div class="box"></div><div class="nm">${n}</div><div class="sz">${fa(r.bytes.length)} بایت${usedNames.has(n)?'':' · <span class="un">استفاده‌نشده</span>'}</div>`;
+    b.querySelector('.box').appendChild(cv);
+    b.addEventListener('click',()=>{const t=wrapC(toC(n,isz));$('cout').value=t;copy(t);});
+    $('igrid').appendChild(b);
+  }
+}
+$('isz').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(!b)return;isz=+b.dataset.s;drawIcons();});
+$('bUsed').addEventListener('click',()=>{$('cout').value=wrapC([...used.values()].sort((a,b)=>a[0].localeCompare(b[0])||a[1]-b[1]).map(([n,s])=>toC(n,s)).join(''));});
+$('bAll').addEventListener('click',()=>{$('cout').value=wrapC(Object.keys(I).map(n=>toC(n,isz)).join(''));});
+$('bCopy').addEventListener('click',()=>{if(!$('cout').value)$('bUsed').click();copy($('cout').value);});
+let tt;
+function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,1800);}
+function copy(text){
+  try{navigator.clipboard.writeText(text).then(()=>toast('کد کپی شد'),()=>{$('cout').select();toast('متن انتخاب شد؛ Ctrl+C بزنید');});}
+  catch(e){$('cout').select();toast('متن انتخاب شد؛ Ctrl+C بزنید');}
+}
+drawIcons();
+$('cout').value=wrapC(toC('fan',48));
+
+/* =========================================================
+   9. NOTES: palette, budget, menu tree, hero chips
+   ========================================================= */
+const PAL=[['پس‌زمینه بالا','#040918'],['پس‌زمینه پایین','#091634'],['سحابی','#224eaa'],['تأکید','#35d6ff'],['متن','#e2f6ff'],['متن کم‌رنگ','#7fa8c6'],['خط','#1c4f7a'],['پنل (۵۰٪)','#0e2850'],['پنجره','#071430'],['در حال گرم شدن','#ff9f43'],['خطر','#ff5470'],['تمام‌شده','#47e08f']];
+const to565=h=>{const n=parseInt(h.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;return '0x'+(((r>>3)<<11)|((g>>2)<<5)|(b>>3)).toString(16).toUpperCase().padStart(4,'0');};
+$('pal').innerHTML=PAL.map(([n,h])=>`<div class="swi"><i style="background:${h}"></i><div><div>${n}</div><code>${h}</code> <code>${to565(h)}</code></div></div>`).join('');
+
+const bySize={};let tb=0,cnt=0;
+for(const [n,s] of used.values()){const b=Math.ceil(s/8)*s;(bySize[s]=bySize[s]||{c:0,b:0});bySize[s].c++;bySize[s].b+=b;tb+=b;cnt++;}
+const kb=b=>(b/1024).toFixed(1)+' KB';
+$('budget').innerHTML=`<tr><th>اندازه</th><th>تعداد</th><th>۱ بیتی</th><th>اگر RGB565 بود</th></tr>`+
+  Object.keys(bySize).sort((a,b)=>a-b).map(s=>`<tr><td class="n">${s}×${s}</td><td class="n">${bySize[s].c}</td><td class="n">${kb(bySize[s].b)}</td><td class="n">${kb(bySize[s].c*s*s*2)}</td></tr>`).join('')+
+  `<tr class="tot"><td>جمع</td><td class="n">${cnt}</td><td class="n">${kb(tb)}</td><td class="n">${kb(Object.keys(bySize).reduce((t,s)=>t+bySize[s].c*s*s*2,0))}</td></tr>`;
+
+$('heroChips').innerHTML=[[fa(total),'صفحه'],[fa(Object.keys(I).length),'آیکن تک‌رنگ'],[kb(tb).replace(' KB','')+' KB','فلش برای آیکن‌ها'],['۰','بایت برای پس‌زمینه']].map(([b,t])=>`<span class="chip"><b>${b}</b> ${t}</span>`).join('');
+
+$('tree').innerHTML=`<ul>
+<li><b>Home</b> <span>(status · tap temps → Temperature)</span><ul>
+  <li><b>Prepare</b><ul><li>Auto home · Move axis · Disable steppers · Preheat PLA / ABS · Cooldown</li><li><b>Filament</b> → Load · Unload · Purge · Change <span>(pause wizard)</span></li>
+    <li><b>Bed leveling</b> → Auto level (G29) · Mesh view · Edit mesh · Leveling on/off · Fade · Tramming · Z offset · BLTouch</li></ul></li>
+  <li><b>Settings</b><ul><li>Temperature → presets PLA / ABS · PID tune</li><li>Motion → Steps/mm · Max feedrate · Acceleration · Jerk</li><li>Filament setup · Probe · Display · Leveling · Power-loss recovery · About</li><li>Store · Load · Restore · Touch calibration</li></ul></li>
+  <li><b>Print</b> → <b>Storage</b> (USB / SD) → <b>Files</b> (thumbnail cards, folders) → details → heating → <b>Printing</b><ul><li>Tune → speed · flow · temps · fan · babystep</li><li>Pause / Resume · Stop (confirm)</li><li>Finished</li></ul></li>
+</ul></li>
+<li><b>Pop-ups</b> <span>keypad · confirm · busy · filament runout · power-loss recovery · kill screen</span></li>
+</ul>`;
+})();
+</script>
