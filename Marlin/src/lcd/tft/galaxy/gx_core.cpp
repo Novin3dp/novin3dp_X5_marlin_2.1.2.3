@@ -289,7 +289,7 @@ static void mask_render(uint16_t *buffer, uint16_t cw, uint16_t startLine, uint1
     for (int16_t c = 0; c < int16_t(m.width); c++) {
       if (!run) { const uint8_t b = *src++; if (b & 0x80) { alpha = (b >> 3) & 0x0F; run = (b & 7) + 1; } else { alpha = 0; run = b + 1; } }
       run--;
-      if (!vis || !alpha || c >= int16_t(p.clip) || !WITHIN(x + c, 0, cw - 1)) continue;
+      if (!vis || !alpha || uint16_t(c) >= p.clip || !WITHIN(x + c, 0, cw - 1)) continue;
       row[x + c] = alpha == 15 ? ENDIAN_COLOR(col) : ENDIAN_COLOR(gx_blend(ENDIAN_COLOR(row[x + c]), col, alpha * 17));
     }
   }
