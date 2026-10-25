@@ -734,6 +734,31 @@ static uint8_t gx_progress_pct() {
   return p;
 }
 
+// Remaining time. M73 R from the slicer is used as is. Without it, Marlin's estimate
+// (elapsed * remaining% / done%) counts the heat-up as printing and starts far too high.
+// Instead the rate is measured from a point taken once printing has really started
+// (1% of the file read), and nothing is shown until another 0.5% has been read.
+static uint32_t gx_remaining(const uint32_t elapsed) {
+  #if ENABLED(SET_REMAINING_TIME)
+    if (ui.remaining_time) return ui.remaining_time;
+  #endif
+  #if HAS_MEDIA
+    static uint32_t a_el = 0; static float a_fr = -1;
+    const uint32_t size = card.isFileOpen() ? card.getFileSize() : 0;
+    if (!size) { a_fr = -1; return 0; }
+    const float fr = float(card.getIndex()) / size;
+    if (a_fr < 0 || elapsed < a_el || fr < a_fr) {            // New job (or restarted): wait for the anchor
+      if (fr >= 0.01f) { a_el = elapsed; a_fr = fr; }
+      return 0;
+    }
+    const float done = fr - a_fr;
+    if (done < 0.005f) return 0;
+    return uint32_t((elapsed - a_el) * (1.0f - fr) / done);
+  #else
+    return 0;
+  #endif
+}
+
 static void job_thumb_panel(const uint16_t x, const uint16_t y) {
   gx_canvas(x, y, 160, 160);
   gx_panel(0, 0, 160, 160);
@@ -770,12 +795,8 @@ static void print_draw(const bool full) {
 
   const uint32_t el = print_job_timer.duration();
   stat_row(182, 116, 288, GXI_CLOCK, "Elapsed", gx_time(el));
-  uint32_t rem = 0;
-  #if ENABLED(SHOW_REMAINING_TIME)
-    rem = ui.get_remaining_time();
-  #endif
-  if (!rem && pct > 0) rem = el * (100 - pct) / pct;
-  stat_row(182, 150, 288, GXI_HOURGLASS, "Remaining", pct ? gx_time(rem) : "--:--:--");
+  const uint32_t rem = gx_remaining(el);
+  stat_row(182, 150, 288, GXI_HOURGLASS, "Remaining", rem ? gx_time(rem) : "--:--:--");
   stat_row(182, 184, 288, GXI_LAYERS, paused ? "Paused" : "Z height", gx_ftoa(current_position.z, 2), paused ? GX_C_HOT : GX_C_TEXT);
 
   gx_button(10, 226, 148, 44, GXI_TUNE, "TUNE", full ? GXA(GA_GO, 3) : 0);
