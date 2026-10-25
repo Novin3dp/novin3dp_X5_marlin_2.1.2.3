@@ -156,10 +156,34 @@ enum GxValue : uint8_t {
   V_BRIGHT, V_SLEEP,
   V_MFR_X, V_MFR_Y, V_MFR_Z, V_MFR_E,
   V_SK_AC, V_SK_BD, V_SK_AD,
+  V_PID_P, V_PID_I, V_PID_D,
   V_COUNT
 };
 
 static float v_get(const uint8_t v);
+
+// PID constants of the heater selected on the PID screen (n: 0 = P, 1 = I, 2 = D)
+static float gx_pid_k(const uint8_t n) {
+  #if ENABLED(PIDTEMPBED)
+    if (gx_pid_bed) { const auto &p = thermalManager.temp_bed.pid; return n == 0 ? p.p() : n == 1 ? p.i() : p.d(); }
+  #endif
+  #if ENABLED(PIDTEMP)
+    if (!gx_pid_bed) { const auto &p = thermalManager.temp_hotend[0].pid; return n == 0 ? p.p() : n == 1 ? p.i() : p.d(); }
+  #endif
+  UNUSED(n); return 0;
+}
+static void gx_pid_k_set(const uint8_t n, const float f) {
+  #if ENABLED(PIDTEMPBED)
+    if (gx_pid_bed) { auto &p = thermalManager.temp_bed.pid; if (n == 0) p.set_Kp(f); else if (n == 1) p.set_Ki(f); else p.set_Kd(f); }
+  #endif
+  #if ENABLED(PIDTEMP)
+    if (!gx_pid_bed) {
+      HOTEND_LOOP() { auto &p = thermalManager.temp_hotend[e].pid; if (n == 0) p.set_Kp(f); else if (n == 1) p.set_Ki(f); else p.set_Kd(f); }
+      thermalManager.updatePID();
+    }
+  #endif
+  UNUSED(n); UNUSED(f);
+}
 
 // Skew calibration square: diagonals A-C, B-D and side A-D (mm)
 static float gx_skew_ac = 141.42f, gx_skew_bd = 141.42f, gx_skew_ad = 100.0f;
@@ -226,6 +250,7 @@ static float v_get(const uint8_t v) {
     case V_SK_AC: return gx_skew_ac;
     case V_SK_BD: return gx_skew_bd;
     case V_SK_AD: return gx_skew_ad;
+    case V_PID_P: case V_PID_I: case V_PID_D: return gx_pid_k(v - V_PID_P);
     case V_MFR_X: case V_MFR_Y: case V_MFR_Z: case V_MFR_E:
       return MMM_TO_MMS(gx_manual_feedrate_mm_m[v == V_MFR_E ? E_AXIS : AxisEnum(v - V_MFR_X)]);
     #if HAS_DISPLAY_SLEEP
@@ -283,6 +308,7 @@ static void v_set(const uint8_t v, const float f) {
     case V_SK_AC: gx_skew_ac = f; break;
     case V_SK_BD: gx_skew_bd = f; break;
     case V_SK_AD: gx_skew_ad = f; break;
+    case V_PID_P: case V_PID_I: case V_PID_D: gx_pid_k_set(v - V_PID_P, f); break;
     case V_MFR_X: case V_MFR_Y: case V_MFR_Z: case V_MFR_E:
       gx_manual_feedrate_mm_m[v == V_MFR_E ? E_AXIS : AxisEnum(v - V_MFR_X)] = MMS_TO_MMM(f); break;
     #if ALL(HAS_DISPLAY_SLEEP, EDITABLE_DISPLAY_TIMEOUT)
@@ -320,6 +346,9 @@ static void v_info(const uint8_t v, const char* &label, const char* &unit, float
     case V_SK_AC:  label = "DIAGONAL A-C"; unit = "mm"; mn = 1; mx = 999; dec = 2; break;
     case V_SK_BD:  label = "DIAGONAL B-D"; unit = "mm"; mn = 1; mx = 999; dec = 2; break;
     case V_SK_AD:  label = "SIDE A-D"; unit = "mm"; mn = 1; mx = 999; dec = 2; break;
+    case V_PID_P:  label = "PID Kp"; unit = ""; mx = 9999; dec = 2; break;
+    case V_PID_I:  label = "PID Ki"; unit = ""; mx = 9999; dec = 2; break;
+    case V_PID_D:  label = "PID Kd"; unit = ""; mx = 9999; dec = 2; break;
     case V_MFR_X:  label = "X MOVE SPEED"; unit = "mm/s"; mn = 1; mx = 500; break;
     case V_MFR_Y:  label = "Y MOVE SPEED"; unit = "mm/s"; mn = 1; mx = 500; break;
     case V_MFR_Z:  label = "Z MOVE SPEED"; unit = "mm/s"; mn = 0.1f; mx = 50; dec = 1; break;
@@ -1298,6 +1327,7 @@ GX_SCREEN(gx_screen_pid) {
     gx_row(10, 150, 226, 42, GXI_REFRESH, "Cycles", v_str(V_PID_C), nullptr, GXA(GA_EDIT, V_PID_C), GXT_EDIT);
     gx_button(10, 204, 110, 46, GXI_PLAY, "START", GXA(GA_CMD, C_PID_START), GXB_PRIMARY);
     gx_button(126, 204, 110, 46, GXI_STORE, "SAVE", GXA(GA_CMD, C_SAVE_ASK));
+    for (uint8_t n = 0; n < 3; n++) gx_touch_add(244, 58 + 94 + 24 * n, 226, 24, GXA(GA_EDIT, V_PID_P + n));
   }
   gx_canvas(244, 58, 226, 192);
   gx_panel(0, 0, 226, 192);
@@ -1308,9 +1338,13 @@ GX_SCREEN(gx_screen_pid) {
   #endif
   sprintf_P(t, PSTR("%i\xC2\xB0"), int(TERN0(HAS_HOTEND, thermalManager.wholeDegHotend(0))));
   gx_text_center(0, 56, 226, t, GX_C_HOT, GXF_L);
-  gx_text_center(8, 100, 210, "Results are applied", GX_C_DIM);
-  gx_text_center(8, 124, 210, "automatically (U1).", GX_C_DIM);
-  gx_text_center(8, 154, 210, "Then press SAVE.", GX_C_DIM);
+  // Current PID values (the autotune applies its result, U1). Tap one to edit it.
+  static const char * const kn[3] = { "Kp  ", "Ki  ", "Kd  " };
+  for (uint8_t n = 0; n < 3; n++) {
+    char k[24]; strcpy(k, kn[n]); strlcat(k, gx_ftoa(gx_pid_k(n), 2), sizeof(k));
+    gx_text_center(8, 96 + 24 * n, 210, k, GX_C_TEXT);
+  }
+  gx_text_center(8, 168, 210, "Tap a value to edit", GX_C_DIM);
   gx_footer_status();
 }
 

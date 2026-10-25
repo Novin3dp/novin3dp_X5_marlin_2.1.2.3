@@ -60,7 +60,10 @@ void MarlinUI::tft_idle() {
 
   // The buzzer shares the display ribbon: its current corrupts SPI transfers.
   // Hold back display drawing while any tone is sounding.
+  // Blocking loops (M303 PID autotune) call ui.update() but not idle(), so end the tone here too,
+  // otherwise a touch beep never finishes and the screen and touch stay frozen.
   #if HAS_BEEPER
+    buzzer.tick();
     if (buzzer.is_active()) return;
   #endif
 
