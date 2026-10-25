@@ -3777,6 +3777,13 @@ public:
  */
 void Temperature::isr() {
 
+  // A USB flash drive transfer may block the main loop for seconds: keep the watchdog fed,
+  // but only for up to 10 s so a dead drive still ends in a watchdog reset
+  #if ALL(USE_WATCHDOG, USE_OTG_USB_HOST, USBHOST)
+    extern volatile millis_t usb_io_start_ms;
+    if (usb_io_start_ms && PENDING(millis(), usb_io_start_ms + 10000UL)) hal.watchdog_refresh();
+  #endif
+
   // Shut down the laser if steppers are inactive for > LASER_SAFETY_TIMEOUT_MS ms
   #if LASER_SAFETY_TIMEOUT_MS > 0
     if (cutter.last_power_applied && ELAPSED(millis(), gcode.previous_move_ms + (LASER_SAFETY_TIMEOUT_MS))) {

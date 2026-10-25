@@ -104,15 +104,27 @@ void MarlinUI::tft_idle() {
 
 #endif
 
+// Kill / power outage: must show up within a few milliseconds (on an outage the supply is
+// already collapsing), so the message is drawn first, on a plain background, without the
+// galaxy computation and the large icon of the normal screens.
 void MarlinUI::draw_kill_screen() {
+  while (tft.is_busy()) { /* let a running DMA transfer finish */ }
   tft.queue.reset();
-  gx_canvas(0, 0, TFT_WIDTH, TFT_HEIGHT);
-  gx_icon((TFT_WIDTH - 64) / 2, 40, GXI_FLAME, 64, GX_C_BAD);
-  gx_text_center(0, 118, TFT_WIDTH, "PRINTER HALTED", GX_C_BAD, GXF_L);
-  gx_text_center(10, 166, TFT_WIDTH - 20, status_message, GX_C_TEXT);
+  // The reason first, in a small canvas
+  tft.canvas(0, 130, TFT_WIDTH, 40);
+  tft.set_background(GX_C_BG);
+  gx_text_center(10, 8, TFT_WIDTH - 20, status_message, GX_C_TEXT, GXF_L);
+  tft.queue.sync();
+  // Then the rest of the screen
+  tft.fill(0, 0, TFT_WIDTH, 130, GX_C_BG);
+  tft.fill(0, 170, TFT_WIDTH, TFT_HEIGHT - 170, GX_C_BG);
+  tft.canvas(0, 70, TFT_WIDTH, 40);
+  tft.set_background(GX_C_BG);
+  gx_text_center(0, 8, TFT_WIDTH, "PRINTER HALTED", GX_C_BAD, GXF_L);
+  tft.canvas(0, 190, TFT_WIDTH, 30);
+  tft.set_background(GX_C_BG);
   tft_string.set(GET_TEXT(MSG_PLEASE_RESET)); tft_string.trim();
-  tft.add_text(tft_string.center(TFT_WIDTH), 200, GX_C_DIM, tft_string);
-  gx_bar(0, GX_FOOTER_Y, TFT_WIDTH, 1, GX_C_BAD);
+  tft.add_text(tft_string.center(TFT_WIDTH), 4, GX_C_DIM, tft_string);
   tft.queue.sync();
 }
 

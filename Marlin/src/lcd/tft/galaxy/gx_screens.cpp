@@ -1611,17 +1611,24 @@ GX_SCREEN(gx_screen_about) {
 // Nozzle / bed / fan: one screen each, with a slider instead of the keypad
 //////////////////////////////////////////////////////////////////////////////
 
-static uint8_t gx_heat_target = 0;   // 0 = nozzle, 1 = bed, 2 = fan
+static uint8_t gx_heat_target = 0;   // 0 = nozzle, 1 = bed, 2 = fan, 3 = chamber
 
 static int16_t heat_max(const uint8_t t) {
   switch (t) {
     case 0: return TERN(HAS_HOTEND, thermalManager.hotend_max_target(0), 0);
     case 1: return TERN(HAS_HEATED_BED, BED_MAX_TARGET, 0);
+    case 3: return TERN(HAS_HEATED_CHAMBER, CHAMBER_MAX_TARGET, 0);
     default: return 100;
   }
 }
-static int16_t heat_get(const uint8_t t) { return int16_t(v_get(t == 0 ? V_NOZZLE : t == 1 ? V_BED : V_FAN)); }
-static void heat_set(const uint8_t t, const int16_t v) { v_set(t == 0 ? V_NOZZLE : t == 1 ? V_BED : V_FAN, constrain(v, 0, heat_max(t))); }
+static int16_t heat_get(const uint8_t t) {
+  if (t == 3) return TERN0(HAS_HEATED_CHAMBER, thermalManager.degTargetChamber());
+  return int16_t(v_get(t == 0 ? V_NOZZLE : t == 1 ? V_BED : V_FAN));
+}
+static void heat_set(const uint8_t t, const int16_t v) {
+  if (t == 3) { TERN_(HAS_HEATED_CHAMBER, thermalManager.setTargetChamber(constrain(v, 0, heat_max(t)))); return; }
+  v_set(t == 0 ? V_NOZZLE : t == 1 ? V_BED : V_FAN, constrain(v, 0, heat_max(t)));
+}
 
 void gx_slider(const uint8_t id, const uint16_t permille) {
   const int16_t mx = heat_max(id);
@@ -1634,6 +1641,7 @@ static void gx_adjust(const uint8_t t, const uint8_t op) {
   if (op < 4) heat_set(t, heat_get(t) + steps[op]);
   else if (op == 4) heat_set(t, 0);
   else if (t == 2) heat_set(t, op == 5 ? 50 : 100);
+  else if (t == 3) heat_set(t, op == 5 ? 40 : 60);    // Chamber presets
   else {
     #if HAS_PREHEAT
       const uint8_t m = op - 5;
@@ -1648,9 +1656,9 @@ constexpr uint16_t SL_X = 24, SL_W = 432, SL_Y = 132, SL_H = 52;   // Slider tou
 GX_SCREEN(gx_screen_heat) {
   gx_set_refresh(1000);
   const uint8_t t = gx_heat_target;
-  const bool fan = t == 2;
-  static const char * const titles[3] = { "NOZZLE", "HEATED BED", "FAN" };
-  static const GxIcon icons[3] = { GXI_NOZZLE, GXI_BED, GXI_FAN };
+  const bool fan = t == 2, chamber = t == 3, adjustable = !chamber || ENABLED(HAS_HEATED_CHAMBER);
+  static const char * const titles[4] = { "NOZZLE", "HEATED BED", "FAN", "CHAMBER" };
+  static const GxIcon icons[4] = { GXI_NOZZLE, GXI_BED, GXI_FAN, GXI_THERMO };
 
   // Current / target values
   int16_t cur = 0;
@@ -1660,11 +1668,17 @@ GX_SCREEN(gx_screen_heat) {
   #if HAS_HEATED_BED
     if (t == 1) cur = thermalManager.wholeDegBed();
   #endif
+  #if HAS_TEMP_CHAMBER
+    if (chamber) cur = thermalManager.wholeDegChamber();
+  #endif
   const int16_t tgt = heat_get(t), mx = heat_max(t);
   const uint16_t col = fan ? GX_C_ACC : gx_heat_color(cur);
 
   if (gx_full()) {
     gx_header(titles[t]);
+    if (!adjustable) gx_footer_msg("Chamber sensor only (no chamber heater)");
+  }
+  if (gx_full() && adjustable) {
     // Fine steps
     static const char * const sl[4] = { "-10", "-1", "+1", "+10" };
     for (uint8_t i = 0; i < 4; i++)
@@ -1674,6 +1688,11 @@ GX_SCREEN(gx_screen_heat) {
       gx_button(10, 232, 148, 38, GXI_FAN, "OFF", GXA(GA_ADJ, (t << 4) | 4));
       gx_button(166, 232, 148, 38, GXI_FAN, "50%", GXA(GA_ADJ, (t << 4) | 5));
       gx_button(322, 232, 148, 38, GXI_FAN, "100%", GXA(GA_ADJ, (t << 4) | 6));
+    }
+    else if (chamber) {
+      gx_button(10, 232, 148, 38, GXI_PREHEAT, "40\xC2\xB0", GXA(GA_ADJ, (t << 4) | 5));
+      gx_button(166, 232, 148, 38, GXI_PREHEAT, "60\xC2\xB0", GXA(GA_ADJ, (t << 4) | 6));
+      gx_button(322, 232, 148, 38, GXI_SNOW, "COOLDOWN", GXA(GA_ADJ, (t << 4) | 4), GXB_PRIMARY);
     }
     else {
       gx_button(10, 232, 148, 38, GXI_PREHEAT, "PLA", GXA(GA_ADJ, (t << 4) | 5));
@@ -1691,9 +1710,12 @@ GX_SCREEN(gx_screen_heat) {
   gx_icon(12, 9, icons[t], 48, col);
   char a[16], b[24];
   if (fan) { sprintf_P(a, PSTR("%i%%"), tgt); strcpy_P(b, PSTR("Fan speed")); }
+  else if (!adjustable) { sprintf_P(a, PSTR("%i\xC2\xB0"), cur); strcpy_P(b, PSTR("Chamber")); }
   else { sprintf_P(a, PSTR("%i\xC2\xB0"), cur); sprintf_P(b, PSTR("Target %i\xC2\xB0" "C"), tgt); }
   gx_text(76, gx_vcenter(66, GXF_L), a, col, GXF_L);
   gx_text_right(448, gx_vcenter(66, GXF_S), b, fan ? GX_C_DIM : (tgt ? GX_C_ACC : GX_C_DIM));
+
+  if (!adjustable) return;   // No heater: reading only
 
   // Slider
   gx_canvas(10, SL_Y, 460, SL_H);
@@ -2005,6 +2027,7 @@ static void gx_open(const uint8_t id) {
     case 27: gx_heat_target = 0; gx_go(gx_screen_heat); break;
     case 28: gx_heat_target = 1; gx_go(gx_screen_heat); break;
     case 29: gx_heat_target = 2; gx_go(gx_screen_heat); break;
+    case 43: gx_heat_target = 3; gx_go(gx_screen_heat); break;
     #if ENABLED(EDITABLE_STEPS_PER_UNIT)
       case 21: gx_go(menu_advanced_steps_per_mm); break;
     #endif

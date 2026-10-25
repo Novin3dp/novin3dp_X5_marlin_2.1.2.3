@@ -405,7 +405,7 @@ void gx_header(const char *title, const bool back) {
     gx_panel(10, 8, 44, 36);
     gx_icon(20, 14, GXI_BACK, 24);
   }
-  gx_text(tx, 8 + gx_vcenter(36, GXF_L), title, GX_C_ACC, GXF_L, 236 - tx);
+  gx_text(tx, 8 + gx_vcenter(36, GXF_L), title, GX_C_ACC, GXF_L, GX_W - 10 - tx);
   gx_bar(tx, 50, GX_W - 10 - tx, 1, GX_C_ACC);
   if (back) gx_touch_add(0, 0, 70, GX_HEADER_H, GXA(GA_BACK, 0));
 }
@@ -471,7 +471,7 @@ void gx_footer_temps() {
   gx_touch_add(0,  GX_FOOTER_Y, cw, GX_H - GX_FOOTER_Y, GXA(GA_GO, 27));
   gx_touch_add(cw, GX_FOOTER_Y, cw, GX_H - GX_FOOTER_Y, GXA(GA_GO, 28));
   #if HAS_TEMP_CHAMBER
-    gx_touch_add(2 * cw, GX_FOOTER_Y, cw, GX_H - GX_FOOTER_Y, GXA(GA_TEMPS, 0));
+    gx_touch_add(2 * cw, GX_FOOTER_Y, cw, GX_H - GX_FOOTER_Y, GXA(GA_GO, 43));
   #endif
   gx_touch_add((GX_FOOTER_COLS - 1) * cw, GX_FOOTER_Y, cw, GX_H - GX_FOOTER_Y, GXA(GA_GO, 29));
 }

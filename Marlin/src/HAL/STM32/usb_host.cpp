@@ -107,12 +107,23 @@ uint16_t BulkStorage::GetSectorSize(uint8_t lun) {
   return usb->block_size;
 }
 
+// USBH_MSC_Read/Write block until the drive answers. Some flash drives stall for seconds
+// (e.g. writing the power-loss file on pause), which used to trip the 4 s watchdog.
+// While a transfer is running the temperature ISR keeps the watchdog fed (see usb_io_watchdog()).
+volatile millis_t usb_io_start_ms = 0;
+
 uint8_t BulkStorage::Read(uint8_t lun, uint32_t addr, uint16_t bsize, uint8_t blocks, uint8_t *buf) {
-  return USBH_MSC_Read(&hUsbHost, lun, addr, buf, blocks) != USBH_OK;
+  usb_io_start_ms = millis() | 1;
+  const uint8_t err = USBH_MSC_Read(&hUsbHost, lun, addr, buf, blocks) != USBH_OK;
+  usb_io_start_ms = 0;
+  return err;
 }
 
 uint8_t BulkStorage::Write(uint8_t lun, uint32_t addr, uint16_t bsize, uint8_t blocks, const uint8_t * buf) {
-  return USBH_MSC_Write(&hUsbHost, lun, addr, const_cast<uint8_t*>(buf), blocks) != USBH_OK;
+  usb_io_start_ms = millis() | 1;
+  const uint8_t err = USBH_MSC_Write(&hUsbHost, lun, addr, const_cast<uint8_t*>(buf), blocks) != USBH_OK;
+  usb_io_start_ms = 0;
+  return err;
 }
 
 #endif // USE_OTG_USB_HOST && USBHOST
